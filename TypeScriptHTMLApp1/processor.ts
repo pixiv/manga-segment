@@ -1,5 +1,4 @@
 ﻿/// <reference path="core.ts">
-import Rgb = Core.Rgb;
 
 "use strict"
 
@@ -10,24 +9,6 @@ module Core {
         // Copy input to output
         static copy(input: ImageData, output: ImageData) {
             this.for_images(input, output, (value: number) => value);
-        }
-
-        // Clone input
-        static clone(input: ImageData): ImageData {
-            var output: ImageData;
-            output.data = new Uint8Array(input.data);
-            this.for_images(input, output, (value: number) => value);
-            return output;
-        }
-
-        static getPixel(image: ImageData, index: number): Rgb {
-            return new Rgb(image[index * 4], image[index * 4 + 1], image[index * 4 + 2]);
-        }
-
-        static setPixel<T>(image: ImageData, index: number, value: T);
-        static setPixel(image: ImageData, index: number, value: Rgb) {
-            for (var c = 0; c < 3; c++)
-                image[index * 4 + c] = value;
         }
 
         static for_image(imageData: ImageData, handler: (data: Uint8Array, index: number) => void) {
@@ -151,47 +132,31 @@ module Core {
         }
 
         // Vectorize input
-        static vectorize(image: ImageData, lines: Array<Line>) {
-            var pt, distpt: Point;
-            var originalImage = this.clone(image);
-            var width = image.width;
-            this.for_image(image, (data: Uint8Array, index: number) => {
-                if (this.getPixel(originalImage, pt.index(width)) == Rgb.white) {
-                    distpt = pt;
-                    this.setPixel(image, distpt.index(width), 255);
-                    while (this.getPixel(image, distpt.index(width)) == Rgb.white) {
-                        this.setPixel(image, distpt.index(width), 0);
-                        distpt.add(new Point(1, 0));
-                        if (!(0 < distpt.x && 0 < distpt.y && distpt.x < image.width && distpt.y < image.height))
-                            break;
-                    }
-                    distpt.add(new Point(-1, 0));
-                    if (pt != distpt) {
-                        //セグメントを追加
-                        var line_can: Line;
-                        line_can.push(pt);
-                        line_can.push(distpt);
-                        lines.push(line_can);
-                    }
-                    for (var drc = 1; drc >= -1; drc--) {
-                        distpt = pt;
-                        this.setPixel(image, distpt.index(width), 255);
-                        while (this.getPixel(image, distpt.index(width)) == Rgb.white) {
-                            this.setPixel(image, distpt.index(width), 0);
-                            distpt.add(new Point(drc, 1));
-                            if (!(0 < distpt.x && 0 < distpt.y && distpt.x < image.width && distpt.y < image.height))
+        static vectorize(mat: Mat): Array<Stroke> {
+            var segments: Array<Stroke>;
+            var distpt: Point;
+            var originalImage: Mat = mat.clone();
+            var width: number = mat.width;
+            var directions: Array<Point> = [new Point(1, 0), new Point(1, 1), new Point(0, 1), new Point(-1, 1)];
+            mat.forPixels((point: Point, value: Rgb) => {
+                if (originalImage.at(point).is(Rgb.black)) {
+                    directions.forEach((direction) => {
+                        distpt = point.clone();
+                        mat.at(distpt, Rgb.black);
+                        while (mat.at(distpt).is(Rgb.black)) {
+                            mat.at(distpt, Rgb.white);
+                            distpt.add(direction);
+                            if (!mat.isInside(distpt))
                                 break;
                         }
-                        distpt.add(new Point(-drc, -1));
-                        if (pt != distpt) {
-                            var line_can: Line;
-                            line_can.push(pt);
-                            line_can.push(distpt);
-                            lines.push(line_can);
+                        distpt.add(direction.inverse());
+                        if (!point.is(distpt)) {
+                            segments.push(new Stroke([point, distpt]));
                         }
-                    }
+                    });
                 }
             });
+            return segments;
         }
     }
 }

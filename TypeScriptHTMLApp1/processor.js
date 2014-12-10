@@ -1,8 +1,5 @@
 ﻿/// <reference path="core.ts">
-var Rgb = Core.Rgb;
-
 "use strict";
-
 var Core;
 (function (Core) {
     var Processor = (function () {
@@ -13,25 +10,6 @@ var Core;
             this.for_images(input, output, function (value) {
                 return value;
             });
-        };
-
-        // Clone input
-        Processor.clone = function (input) {
-            var output;
-            output.data = new Uint8Array(input.data);
-            this.for_images(input, output, function (value) {
-                return value;
-            });
-            return output;
-        };
-
-        Processor.getPixel = function (image, index) {
-            return new Core.Rgb(image[index * 4], image[index * 4 + 1], image[index * 4 + 2]);
-        };
-
-        Processor.setPixel = function (image, index, value) {
-            for (var c = 0; c < 3; c++)
-                image[index * 4 + c] = value;
         };
 
         Processor.for_image = function (imageData, handler) {
@@ -173,48 +151,31 @@ var Core;
         };
 
         // Vectorize input
-        Processor.vectorize = function (image, lines) {
-            var _this = this;
-            var pt, distpt;
-            var originalImage = this.clone(image);
-            var width = image.width;
-            this.for_image(image, function (data, index) {
-                if (_this.getPixel(originalImage, pt.index(width)) == Core.Rgb.white) {
-                    distpt = pt;
-                    _this.setPixel(image, distpt.index(width), 255);
-                    while (_this.getPixel(image, distpt.index(width)) == Core.Rgb.white) {
-                        _this.setPixel(image, distpt.index(width), 0);
-                        distpt.add(new Core.Point(1, 0));
-                        if (!(0 < distpt.x && 0 < distpt.y && distpt.x < image.width && distpt.y < image.height))
-                            break;
-                    }
-                    distpt.add(new Core.Point(-1, 0));
-                    if (pt != distpt) {
-                        //セグメントを追加
-                        var line_can;
-                        line_can.push(pt);
-                        line_can.push(distpt);
-                        lines.push(line_can);
-                    }
-                    for (var drc = 1; drc >= -1; drc--) {
-                        distpt = pt;
-                        _this.setPixel(image, distpt.index(width), 255);
-                        while (_this.getPixel(image, distpt.index(width)) == Core.Rgb.white) {
-                            _this.setPixel(image, distpt.index(width), 0);
-                            distpt.add(new Core.Point(drc, 1));
-                            if (!(0 < distpt.x && 0 < distpt.y && distpt.x < image.width && distpt.y < image.height))
+        Processor.vectorize = function (mat) {
+            var segments;
+            var distpt;
+            var originalImage = mat.clone();
+            var width = mat.width;
+            var directions = [new Core.Point(1, 0), new Core.Point(1, 1), new Core.Point(0, 1), new Core.Point(-1, 1)];
+            mat.forPixels(function (point, value) {
+                if (originalImage.at(point).is(Core.Rgb.black)) {
+                    directions.forEach(function (direction) {
+                        distpt = point.clone();
+                        mat.at(distpt, Core.Rgb.black);
+                        while (mat.at(distpt).is(Core.Rgb.black)) {
+                            mat.at(distpt, Core.Rgb.white);
+                            distpt.add(direction);
+                            if (!mat.isInside(distpt))
                                 break;
                         }
-                        distpt.add(new Core.Point(-drc, -1));
-                        if (pt != distpt) {
-                            var line_can;
-                            line_can.push(pt);
-                            line_can.push(distpt);
-                            lines.push(line_can);
+                        distpt.add(direction.inverse());
+                        if (!point.is(distpt)) {
+                            segments.push(new Core.Stroke([point, distpt]));
                         }
-                    }
+                    });
                 }
             });
+            return segments;
         };
         return Processor;
     })();

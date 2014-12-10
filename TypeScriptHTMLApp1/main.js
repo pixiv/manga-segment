@@ -3,13 +3,16 @@
 /// <reference path="processor.ts">
 /// <reference path="gui.ts">
 "use strict";
+var Segment = Core.Segment;
 var Point = Core.Point;
-
+var Stroke = Core.Stroke;
+var Mat = Core.Mat;
 var Processor = Core.Processor;
+var Rgb = Core.Rgb;
 
 var drawFlag = false;
-var lines = [];
-var points = [];
+var strokes;
+var stroke;
 
 function convert(jpoint) {
     return new Point(jpoint.clientX, jpoint.clientY);
@@ -28,26 +31,26 @@ $(window).load(function () {
     });
     $("#main").bind("mousemove", function (e) {
         if (drawFlag) {
-            if (points.length != 0) {
+            if (stroke.empty()) {
                 var painter = new Gui.Painter(element);
-                painter.draw(points[points.length - 1], convert(e));
+                painter.draw(new Segment(stroke.points[stroke.points.length - 1], convert(e)));
             }
-            points.push(convert(e));
+            stroke.points.push(convert(e));
         }
     });
     $("#main").bind("mousedown", function (e) {
         drawFlag = true;
-        points.push(convert(e));
+        stroke.points.push(convert(e));
     });
     $("#main").bind("mouseup", function () {
         drawFlag = false;
-        lines.push(points.concat());
-        points.length = 0;
+        strokes.push(stroke.clone());
+        stroke.clear();
     });
-    $("#lines").bind("click", function () {
+    $("#strokes").bind("click", function () {
         var message = "";
-        lines.forEach(function (line) {
-            line.forEach(function (point) {
+        strokes.forEach(function (line) {
+            line.points.forEach(function (point) {
                 message += "(" + point.x + ", " + point.y + "), ";
             });
             message += "\n";
@@ -56,8 +59,8 @@ $(window).load(function () {
     });
     $("#Vectorize").bind("click", function () {
         var imageData = context.getImageData(0, 0, element.width, element.height);
-        Processor.vectorize(imageData, lines);
-        context.putImageData(imageData, 0, 0);
+        var mat = new Mat(imageData);
+        strokes = Processor.vectorize(mat);
     });
     $("#GetEdge").bind("click", function () {
         var imageData = context.getImageData(0, 0, element.width, element.height);
@@ -80,6 +83,12 @@ $(window).load(function () {
         var imageData = context.getImageData(0, 0, element.width, element.height);
         Processor.toGray(imageData, imageData);
         context.putImageData(imageData, 0, 0);
+    });
+    $("#Label").bind("click", function () {
+        var segments;
+        strokes.forEach(function (stroke) {
+            segments.concat(stroke.segments());
+        });
     });
 });
 //# sourceMappingURL=main.js.map

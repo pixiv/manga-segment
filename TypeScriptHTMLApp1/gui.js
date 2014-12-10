@@ -6,13 +6,13 @@ var Gui;
         function Painter(canvas) {
             this.canvas = canvas;
         }
-        Painter.prototype.draw = function (previous, current) {
+        Painter.prototype.draw = function (segment) {
             var context = this.canvas.getContext("2d");
             context.strokeStyle = "rgba(255,0,0,1)";
             context.lineWidth = 3;
             context.beginPath();
-            context.moveTo(previous.x, previous.y);
-            context.lineTo(current.x, current.y);
+            context.moveTo(segment.start.x, segment.start.y);
+            context.lineTo(segment.end.x, segment.end.y);
             context.stroke();
             context.closePath();
         };

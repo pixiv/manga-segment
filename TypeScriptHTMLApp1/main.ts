@@ -5,13 +5,16 @@
 
 "use strict"
 
+import Segment = Core.Segment;
 import Point = Core.Point;
-import Line = Core.Line;
+import Stroke = Core.Stroke;
+import Mat = Core.Mat;
 import Processor = Core.Processor;
+import Rgb = Core.Rgb;
 
 var drawFlag: boolean = false;
-var lines: Line[] = [];
-var points: Line = [];
+var strokes: Stroke[];
+var stroke: Stroke;
 
 function convert(jpoint: JQueryEventObject): Point {
     return new Point(jpoint.clientX, jpoint.clientY);
@@ -30,26 +33,26 @@ $(window).load(() => {
     });
     $("#main").bind("mousemove", (e) => {
         if (drawFlag) {
-            if (points.length != 0) {
+            if (stroke.empty()) {
                 var painter = new Gui.Painter(element);
-                painter.draw(points[points.length - 1], convert(e));
+                painter.draw(new Segment(stroke.points[stroke.points.length - 1], convert(e)));
             }
-            points.push(convert(e));
+            stroke.points.push(convert(e));
         }
     });
     $("#main").bind("mousedown", function (e) {
         drawFlag = true;
-        points.push(convert(e));
+        stroke.points.push(convert(e));
     });
     $("#main").bind("mouseup", () => {
         drawFlag = false;
-        lines.push(points.concat());
-        points.length = 0;
+        strokes.push(stroke.clone());
+        stroke.clear();
     });
-    $("#lines").bind("click", () => {
-        var message : string = "";
-        lines.forEach((line) => {
-            line.forEach((point) => {
+    $("#strokes").bind("click", () => {
+        var message: string = "";
+        strokes.forEach((line) => {
+            line.points.forEach((point) => {
                 message += "(" + point.x + ", " + point.y + "), ";
             });
             message += "\n";
@@ -58,8 +61,8 @@ $(window).load(() => {
     });
     $("#Vectorize").bind("click", () => {
         var imageData: ImageData = context.getImageData(0, 0, element.width, element.height);
-        Processor.vectorize(imageData, lines);
-        context.putImageData(imageData, 0, 0);
+        var mat: Mat = new Mat(imageData);
+        strokes = Processor.vectorize(mat);
     });
     $("#GetEdge").bind("click", () => {
         var imageData: ImageData = context.getImageData(0, 0, element.width, element.height);
@@ -82,5 +85,11 @@ $(window).load(() => {
         var imageData: ImageData = context.getImageData(0, 0, element.width, element.height);
         Processor.toGray(imageData, imageData);
         context.putImageData(imageData, 0, 0);
+    });
+    $("#Label").bind("click", () => {
+        var segments: Array<Segment>;
+        strokes.forEach((stroke) => {
+            segments.concat(stroke.segments());
+        });
     });
 });
