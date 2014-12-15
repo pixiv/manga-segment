@@ -1,0 +1,19 @@
+﻿span.palette {
+    cursor: pointer;
+    float: left;
+    margin: 1px;
+    width: 20px;
+    height: 20px;
+}
+
+span.selected {
+    border: 1px solid black;
+}
+
+button.processing {
+    background-color: PapayaWhip;
+}
+
+button.displaying {
+    background-color: skyblue;
+}

@@ -1,20 +1,24 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>エッジ検出デモ</title>
+    <title>ObjectSegmentation</title>
+    <link rel="stylesheet" href="index.css" />
     <script src="Scripts/jquery-2.1.1.js"></script>
     <script src="core.js"></script>
     <script src="processor.js"></script>
+    <script src="labeler.js"></script>
     <script src="gui.js"></script>
     <script src="main.js"></script>
 </head>
 <body>
     <canvas id="main"></canvas>
-    <button id="GetEdge">GetEdge</button>
-    <button id="toGray">toGray</button>
-    <button id="Binarize">Binarize</button>
-    <button id="thinning">Thinning</button>
-    <button id="Vectorize">Vectorize</button>
-    <button id="lines">Show Lines</button>
+    <button id="GetEdge" class="processing">GetEdge</button>
+    <button id="toGray" class="processing">toGray</button>
+    <button id="Binarize" class="processing">Binarize</button>
+    <button id="thinning" class="processing">Thinning</button>
+    <button id="Vectorize" class="processing">Vectorize</button>
+    <button id="Scribbles" class="displaying">Scribbles</button>
+    <button id="Segments" class="displaying">Segments</button>
+    <div id="palettes"></div>
 </body>
 </html>

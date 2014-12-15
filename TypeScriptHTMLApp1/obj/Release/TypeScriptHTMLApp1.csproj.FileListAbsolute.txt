@@ -3,3 +3,4 @@ C:\Users\Kinect-7\documents\visual studio 2013\Projects\TypeScriptHTMLApp1\TypeS
 C:\Users\Kinect-7\documents\visual studio 2013\Projects\TypeScriptHTMLApp1\TypeScriptHTMLApp1\bin\TypeScriptHTMLApp1.pdb
 C:\Users\Kinect-7\documents\visual studio 2013\Projects\TypeScriptHTMLApp1\TypeScriptHTMLApp1\obj\Release\TypeScriptHTMLApp1.dll
 C:\Users\Kinect-7\documents\visual studio 2013\Projects\TypeScriptHTMLApp1\TypeScriptHTMLApp1\obj\Release\TypeScriptHTMLApp1.pdb
+C:\Users\Kinect-7\Documents\Visual Studio 2013\Projects\TypeScriptHTMLApp1\TypeScriptHTMLApp1\obj\Release\TypeScriptHTMLApp1.csprojResolveAssemblyReference.cache

@@ -1,15 +1,10 @@
-﻿/// <reference path="core.ts">
+﻿/// <reference path="core.ts" />
 
 "use strict"
 
 module Core {
 
     export class Processor {
-
-        // Copy input to output
-        static copy(input: ImageData, output: ImageData) {
-            this.for_images(input, output, (value: number) => value);
-        }
 
         static for_image(imageData: ImageData, handler: (data: Uint8Array, index: number) => void) {
             var w = imageData.width;
@@ -22,34 +17,34 @@ module Core {
             }
         }
 
-        static for_images(input: ImageData, output: ImageData, handler: (value: number) => number) {
-            var w = input.width;
-            var h = input.height;
-            var inputData = input.data;
-            var outputData = output.data;
-            for (var y = 1; y < h - 1; y += 1) {
-                for (var x = 1; x < w - 1; x += 1) {
-                    for (var c = 0; c < 3; c += 1) {
-                        var i = (y * w + x) * 4 + c;
-                        outputData[i] = handler(inputData[i]);
-                    }
-                    outputData[(y * w + x) * 4 + 3] = inputData[(y * w + x) * 4 + 3]
-                }
-            }
-        }
+        //static for_images(input: ImageData, output: ImageData, handler: (value: number) => number) {
+        //    var w = input.width;
+        //    var h = input.height;
+        //    var inputData = input.data;
+        //    var outputData = output.data;
+        //    for (var y = 1; y < h - 1; y += 1) {
+        //        for (var x = 1; x < w - 1; x += 1) {
+        //            for (var c = 0; c < 3; c += 1) {
+        //                var i = (y * w + x) * 4 + c;
+        //                outputData[i] = handler(inputData[i]);
+        //            }
+        //            outputData[(y * w + x) * 4 + 3] = inputData[(y * w + x) * 4 + 3]
+        //        }
+        //    }
+        //}
 
         // Invert input to output
-        static invert(input: ImageData, output: ImageData) {
-            this.for_images(input, output, (value: number) => 255 - value);
+        static invert(input: Mat, output: Mat) {
+            input.forPixels(output, (point: Point, value: Rgb) => new Rgb(255 - value.r, 255 - value.g, 255 - value.b));
         }
 
         // Binarize input to output using threshold value
-        static binarize(input: ImageData, output: ImageData, threshold: number) {
-            this.for_images(input, output, (value: number) => value < threshold ? 0 : 255);
+        static binarize(input: Mat, output: Mat, threshold: number) {
+            input.forPixels(output, (point: Point, value: Rgb) => new Rgb(value.r < threshold ? 0 : 255, value.g < threshold ? 0 : 255, value.b < threshold ? 0 : 255));
         }
 
         // Convert input to output as a grayscale
-        static toGray(input: ImageData, output: ImageData) {
+        static toGray(input: Mat, output: Mat) {
             var outputData = output.data;
             this.for_image(input, (data: Uint8Array, index: number) => {
                 var g = data[index] * 0.2126 + data[index + 1] * 0.7152 + data[index + 2] * 0.0722;
@@ -59,7 +54,7 @@ module Core {
         }
 
         // Extract edges from input to output
-        static extractEdge(input: ImageData, output: ImageData) {
+        static extractEdge(input: Mat, output: Mat) {
             var w = input.width
             var h = input.height;
             var outputData = output.data;
@@ -75,7 +70,7 @@ module Core {
         }
 
         // Thinning by Zhang-Suen from http://www.hundredsoft.jp/win7blog/log/eid119.html
-        static thinning(input: ImageData, output: ImageData) {
+        static thinning(input: Mat, output: Mat) {
             var w = input.width;
             var h = input.height;
             var inputData = input.data;
@@ -132,8 +127,7 @@ module Core {
         }
 
         // Vectorize input
-        static vectorize(mat: Mat): Array<Stroke> {
-            var segments: Array<Stroke>;
+        static vectorize(mat: Mat, segments: Array<Segment>) {
             var distpt: Point;
             var originalImage: Mat = mat.clone();
             var width: number = mat.width;
@@ -151,12 +145,11 @@ module Core {
                         }
                         distpt.add(direction.inverse());
                         if (!point.is(distpt)) {
-                            segments.push(new Stroke([point, distpt]));
+                            segments.push(new Segment(point, distpt));
                         }
                     });
                 }
             });
-            return segments;
         }
     }
 }
