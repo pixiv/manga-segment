@@ -98,8 +98,10 @@ module Core {
         }
     }
 
+    export interface Segments extends Array<Segment> { };
+
     //ストローク
-    export class Stroke {
+    export class Points {
         //点群で初期化
         constructor(public points?: Array<Point>) {
         }
@@ -108,15 +110,15 @@ module Core {
             this.points.length = 0;
         }
         //複製を返す
-        clone(): Stroke {
-            return new Stroke(this.points);
+        clone(): Points {
+            return new Points(this.points);
         }
         //空かどうかを返す
         empty(): boolean {
-            return this.points.length == 0;
+            return this.points === undefined || this.points.length == 0;
         }
         toString(): string {
-            return this.points == null ? "" : this.points.toString();
+            return this.points === null ? "" : this.points.toString();
         }
         //セグメント群に変換する
         segments(label: number): Array<Segment> {
@@ -221,6 +223,11 @@ module Core {
         //点が画像の内側かどうかを返す
         isInside(point: Point): boolean {
             return 0 < point.x && 0 < point.y && point.x < this.width && point.y < this.height;
+        }
+
+        copyTo(imageData: ImageData): void {
+            for (var i = 0; i < this.data.length; i++)
+                imageData.data[i] = this.data[i];
         }
 
         //点をインデックスに変換する

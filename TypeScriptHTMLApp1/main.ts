@@ -7,66 +7,76 @@
 "use strict"
 
 import Segment = Core.Segment;
+import Segments = Core.Segments;
 import Point = Core.Point;
-import Stroke = Core.Stroke;
+import Points = Core.Points;
 import Mat = Core.Mat;
 import Processor = Core.Processor;
 import Rgb = Core.Rgb;
 import Labeler = Core.Labeler;
 
 function convert(jpoint: JQueryEventObject): Point {
-    return new Point(jpoint.clientX, jpoint.clientY);
+    return new Point(Math.round(jpoint.clientX), Math.round(jpoint.clientY));
 }
 
 $(window).on("load", () => {
-    var painter = new Gui.Painter(<HTMLCanvasElement> $("#canvas")[0]);
-    painter.createPalettes($("#palettes"));
     var image: HTMLImageElement = new Image();
     image.src = "images/x.png";
-    $(image).on("load", () => painter.drawImage(image));
-    $("#main").on("mousemove", (e) => {
-        painter.draw(convert(e));
+    var painter;
+    $(image).on("load", () => {
+        painter = new Gui.Painter(<HTMLCanvasElement> $("#canvas")[0], image)
+        painter.draw();
+        painter.createPalettes($("#palettes"));
     });
-    $("#main").on("mousedown", (e) => {
-        painter.startDrawing();
-        painter.draw(convert(e));
+    $("#main").on({
+        "mousemove": (e) => {
+            painter.add(convert(e));
+            painter.draw();
+        },
+        "mousedown": (e) => painter.startDrawing(convert(e)),
+        "mouseup": () => painter.endDrawing()
     });
-    $("#main").on("mouseup", () => {
-        painter.endDrawing();
+    $("#stroke").on("click", () => {
+        painter.draw(painter.source);
+        if ($("#stroke").prop("checked"))
+            painter.draw(painter.stroke);
+        if ($("#scribble").prop("checked"))
+            painter.draw(painter.scribble);
     });
-    $("#scribbles").on("click", () => {
-        $("#text").text(painter.scribbles.toString());
+    $("#scribble").on("click", () => {
+        painter.draw(painter.source);
+        if ($("#scribble").prop("checked"))
+            painter.draw(painter.scribble);
     });
-    $("#strokes").on("click", () => {
-        $("#text").text(painter.segments.toString());
+    $("#stroke_text").on("click", () => {
+        $("#text").text(painter.stroke.toString());
+    });
+    $("#scribble_text").on("click", () => {
+        $("#text").text(painter.scribble.toString());
     });
     $("#vectorize").on("click", () => {
-        painter.processImage((input) => Processor.vectorize(input, painter.segments));
+        Processor.vectorize(painter.source, painter.stroke);
     });
     $("#edge").on("click", () => {
-        painter.updateImage((input, output) => Processor.extractEdge(input, output));
+        Processor.extractEdge(painter.source, painter.source);
+        painter.draw();
     });
     $("#binarize").on("click", () => {
-        painter.updateImage((input, output) => Processor.binarize(input, output, 200));
+        Processor.binarize(painter.source, painter.source, 200);
+        painter.draw();
     });
     $("#thinning").on("click", () => {
-        painter.updateImage((input, output) => {
-            Processor.invert(input, output);
-            Processor.thinning(output, output);
-            Processor.invert(output, output);
-        });
+        Processor.invert(painter.source, painter.source);
+        Processor.thinning(painter.source, painter.source);
+        Processor.invert(painter.source, painter.source);
     });
     $("#gray").on("click", () => {
-        painter.updateImage((input, output) => Processor.convertToGray(input, output));
+        Processor.convertToGray(painter.source, painter.source);
     });
     $("#labeling").on("click", () => {
-        var scribbleSegments: Array<Segment>;
-        var label: number;
-        painter.scribbles.forEach((stroke) => {
-            scribbleSegments.concat(stroke.segments(label++));
-        });
-        var labeler: Labeler;
-        labeler.source = painter.segments;
-        labeler.seeds = scribbleSegments;
+        var labeler: Labeler = new Labeler;
+        labeler.source = painter.stroke;
+        labeler.seeds = painter.scribble;
+        labeler.setNearest(50);
     });
 });

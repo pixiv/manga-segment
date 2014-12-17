@@ -5,8 +5,8 @@
 module Core {
 
     export class Labeler {
-        public source: Array<Segment>;
-        public seeds: Array<Segment>;
+        public source: Array<Segment> = [];
+        public seeds: Array<Segment> = [];
 
         setNearest(offset: number): void {
             this.source.forEach((segment) => {

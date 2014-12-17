@@ -22,16 +22,22 @@ form {
     clear: both;
 }
 
+span:not(.selected) {
+    border: 2px solid white;
+}
+
 span.selected {
-    border: 1px solid black;
+    border: 2px solid black;
 }
 
 fieldset.processing button {
     background-color: PapayaWhip;
     border: 1px solid gray;
+    height: 30px;
 }
 
 fieldset.displaying button {
     background-color: skyblue;
     border: 1px solid gray;
+    height: 30px;
 }
