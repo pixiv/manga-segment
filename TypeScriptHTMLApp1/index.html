@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>ObjectSegmentation</title>
+    <title>Object Segmentation</title>
     <link rel="stylesheet" href="index.css" />
     <script src="Scripts/jquery-2.1.1.js"></script>
     <script src="core.js"></script>
@@ -11,14 +11,36 @@
     <script src="main.js"></script>
 </head>
 <body>
-    <canvas id="main"></canvas>
-    <button id="GetEdge" class="processing">GetEdge</button>
-    <button id="toGray" class="processing">toGray</button>
-    <button id="Binarize" class="processing">Binarize</button>
-    <button id="thinning" class="processing">Thinning</button>
-    <button id="Vectorize" class="processing">Vectorize</button>
-    <button id="Scribbles" class="displaying">Scribbles</button>
-    <button id="Segments" class="displaying">Segments</button>
-    <div id="palettes"></div>
+    <div id="main">
+        <canvas id="canvas"></canvas>
+        <div id="palettes">
+        </div>
+    </div>
+
+    <form method="post" action="javascript:void(0);">
+
+        <fieldset class="processing">
+            <legend>Process</legend>
+            <button id="edge">Edge</button>
+            <button id="gray">Gray</button>
+            <button id="binarize">Binarize</button>
+            <button id="thinning">Thinning</button>
+            <button id="vectorize">Vectorize</button>
+            <button id="labeling">Labeling</button>
+        </fieldset>
+
+        <fieldset class="displaying">
+            <legend>Display</legend>
+            <button id="strokes">Strokes</button>
+            <button id="scribbles">Scribbles</button>
+        </fieldset>
+
+        <fieldset>
+            <legend>Texts</legend>
+            <span id="text"></span>
+        </fieldset>
+
+    </form>
+
 </body>
 </html>

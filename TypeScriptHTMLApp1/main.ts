@@ -19,11 +19,11 @@ function convert(jpoint: JQueryEventObject): Point {
 }
 
 $(window).on("load", () => {
-    var painter = new Gui.Painter(<HTMLCanvasElement> $("#main")[0]);
+    var painter = new Gui.Painter(<HTMLCanvasElement> $("#canvas")[0]);
     painter.createPalettes($("#palettes"));
     var image: HTMLImageElement = new Image();
     image.src = "images/x.png";
-    $(image).load(() => painter.drawImage("#main", image));
+    $(image).on("load", () => painter.drawImage(image));
     $("#main").on("mousemove", (e) => {
         painter.draw(convert(e));
     });
@@ -34,19 +34,19 @@ $(window).on("load", () => {
     $("#main").on("mouseup", () => {
         painter.endDrawing();
     });
-    $("#Scribbles").on("click", () => {
-        alert(painter.scribbles.toString());
+    $("#scribbles").on("click", () => {
+        $("#text").text(painter.scribbles.toString());
     });
-    $("#Segments").on("click", () => {
-        alert(painter.segments.toString());
+    $("#strokes").on("click", () => {
+        $("#text").text(painter.segments.toString());
     });
-    $("#Vectorize").on("click", () => {
+    $("#vectorize").on("click", () => {
         painter.processImage((input) => Processor.vectorize(input, painter.segments));
     });
-    $("#GetEdge").on("click", () => {
+    $("#edge").on("click", () => {
         painter.updateImage((input, output) => Processor.extractEdge(input, output));
     });
-    $("#Binarize").on("click", () => {
+    $("#binarize").on("click", () => {
         painter.updateImage((input, output) => Processor.binarize(input, output, 200));
     });
     $("#thinning").on("click", () => {
@@ -56,16 +56,17 @@ $(window).on("load", () => {
             Processor.invert(output, output);
         });
     });
-    $("#toGray").on("click", () => {
-        painter.updateImage((input, output) => Processor.toGray(input, output));
+    $("#gray").on("click", () => {
+        painter.updateImage((input, output) => Processor.convertToGray(input, output));
     });
-    $("#Label").on("click", () => {
-        var segments: Array<Segment>;
+    $("#labeling").on("click", () => {
+        var scribbleSegments: Array<Segment>;
+        var label: number;
         painter.scribbles.forEach((stroke) => {
-            segments.concat(stroke.segments());
+            scribbleSegments.concat(stroke.segments(label++));
         });
         var labeler: Labeler;
         labeler.source = painter.segments;
-        labeler.seeds = segments;
+        labeler.seeds = scribbleSegments;
     });
 });

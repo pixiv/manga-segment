@@ -1,0 +1,4 @@
+*.map
+*.js
+TypeScriptHTMLApp1/bin/
+TypeScriptHTMLApp1/obj/

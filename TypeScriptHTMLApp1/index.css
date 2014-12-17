@@ -1,19 +1,37 @@
-﻿span.palette {
+﻿* {
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+
+div#main canvas {
+    float: left;
+}
+
+div#palettes {
+    margin: 10px;
+}
+
+div#palettes span {
     cursor: pointer;
     float: left;
-    margin: 1px;
-    width: 20px;
-    height: 20px;
+    margin: 3px;
+    width: 60px;
+    height: 60px;
+}
+
+form {
+    clear: both;
 }
 
 span.selected {
     border: 1px solid black;
 }
 
-button.processing {
+fieldset.processing button {
     background-color: PapayaWhip;
+    border: 1px solid gray;
 }
 
-button.displaying {
+fieldset.displaying button {
     background-color: skyblue;
+    border: 1px solid gray;
 }

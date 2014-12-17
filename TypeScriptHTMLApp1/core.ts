@@ -5,7 +5,7 @@ module Core {
     //セグメントに振るラベル
     export class Label {
         //数値で初期化
-        constructor(public id: number) {
+        constructor(private id: number) {
         }
         //数値へのキャスト
         toNumber(): number {
@@ -20,6 +20,24 @@ module Core {
         public static black = new Rgb(0, 0, 0);
         //RGB値で初期化
         constructor(public r: number, public g: number, public b: number) {
+        }
+        //色を成分ごとに加算する
+        add(color: Rgb) {
+            this.r += color.r;
+            this.g += color.g;
+            this.b += color.b;
+        }
+        //色を成分ごとに加算した色を返す
+        added(color: Rgb): Rgb {
+            return new Rgb(this.r + color.r, this.g + color.g, this.b + color.b);
+        }
+        //色を成分ごとに乗算する
+        multiplied(num: number): Rgb {
+            return new Rgb(this.r * num, this.g * num, this.b * num);
+        }
+        //成分ごとに正負反転した色を返す
+        inverse(): Rgb {
+            return new Rgb(-this.r, -this.g, -this.b);
         }
         //等色かどうかを返す
         is(rgb: Rgb): boolean {
@@ -67,7 +85,7 @@ module Core {
 
     //セグメント
     export class Segment {
-        label: Label;
+        label: Label = new Label(-1);
         //始点と終点で初期化
         constructor(public start: Point, public end: Point) {
         }
@@ -76,7 +94,7 @@ module Core {
             return this.start.added(this.end);
         }
         toString(): string {
-            return "[ " + this.start.toString() +  " -> " + this.end.toString() + " ]";
+            return "[ " + this.start.toString() + " ~ " + this.end.toString() + ": " + this.label.toNumber() + " ]";
         }
     }
 
@@ -101,8 +119,8 @@ module Core {
             return this.points == null ? "" : this.points.toString();
         }
         //セグメント群に変換する
-        segments(): Array<Segment> {
-            var segments: Array<Segment>;
+        segments(label: number): Array<Segment> {
+            var segments: Array<Segment> = [];
             var gap: boolean = true;
             var previous: Point;
             this.points.forEach((point) => {
@@ -112,7 +130,9 @@ module Core {
                     if (gap) {
                         gap = false;
                     } else {
-                        segments.push(new Segment(previous, point));
+                        var segment = new Segment(previous, point);
+                        segment.label = new Label(label);
+                        segments.push(segment);
                     }
                     previous = point;
                 }
@@ -146,12 +166,6 @@ module Core {
             }
         }
 
-        //ImageDataにコピーする
-        copyTo(imageData: ImageData) {
-            for (var i: number = 0; i < this.data.length; i++)
-                imageData.data[i] = this.data[i];
-        }
-
         //点に対応する画素値を返す
         at(point: Point): Rgb;
         //点に画素値を設定する
@@ -162,12 +176,16 @@ module Core {
         at(index: number, value: Rgb);
         //オーバーロードのためのダミー
         at(arg1: any, arg2?: any): Rgb {
+            //点ならインデックスに変換する
             var index: number = (arg1 instanceof Point) ? this.point2Index(arg1) : arg1;
             if (arg2 instanceof Rgb) {
+                //画素値を設定する
                 this.data[index * 4] = arg2.r;
                 this.data[index * 4 + 1] = arg2.g;
                 this.data[index * 4 + 2] = arg2.b;
+                this.data[index * 4 + 3] = 255;
             } else {
+                //画素値を返す
                 return new Rgb(this.data[index * 4], this.data[index * 4 + 1], this.data[index * 4 + 2]);
             }
         }
@@ -184,12 +202,14 @@ module Core {
         //オーバーロードのためのダミー
         forPixels(arg1: any, arg2?: any) {
             if (arg1 instanceof Mat) {
+                //画素を走査して処理する
                 for (var y = 0; y < this.height; y++) {
                     for (var x = 0; x < this.width; x++) {
-                        arg1.at(new Point(x,y), arg2(new Point(x, y), this.at(new Point(x, y))));
+                        arg1.at(new Point(x, y), arg2(new Point(x, y), this.at(new Point(x, y))));
                     }
                 }
             } else {
+                //画素を走査して処理する
                 for (var y = 0; y < this.height; y++) {
                     for (var x = 0; x < this.width; x++) {
                         arg1(new Point(x, y), this.at(new Point(x, y)));

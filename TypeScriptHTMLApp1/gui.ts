@@ -2,42 +2,6 @@
 
 module Gui {
 
-    //export class Converter {
-
-    //    static toString(point: Point): string;
-    //    static toString(segment: Segment): string;
-    //    static toString(strokes: Stroke[]): string;
-    //    static toString(segments: Segment[]): string;
-    //    static toString(arg: any): string {
-    //        var text: string = "";
-    //        if (arg instanceof Point) {
-    //            if (arg != undefined)
-    //                text += "(" + arg.x + ", " + arg.y + "), ";
-    //            else
-    //                text += "\n";
-    //        } else if (arg instanceof Segment) {
-    //            if (arg != undefined)
-    //                text += this.toString(arg.start) + this.toString(arg.end);
-    //            else
-    //                text += "\n";
-    //        //} else if (arg instanceof (Array<Segment>)) {
-    //        //    arg.forEach((segment) => {
-    //        //        if (segment != undefined)
-    //        //            text += this.toString(segment);
-    //        //        else
-    //        //            text += "\n";
-    //        //    });
-    //        //} else if (arg instanceof Stroke[]) {
-    //        //    arg.forEach((stroke) => {
-    //        //        if (stroke.points != undefined)
-    //        //            stroke.points.forEach((point) => text += this.toString(point));
-    //        //    });
-    //        }
-    //        return text;
-    //    }
-
-    //}
-
     export class Painter {
         private colors: string[] = ['red', 'blue', 'green', 'yellow', 'orange', 'purple'];
         private current: number;
@@ -99,11 +63,10 @@ module Gui {
             handler(mat);
         }
 
-        drawImage(selector: string, image: HTMLImageElement): void {
-            var element = <HTMLCanvasElement> $(selector)[0];
-            element.width = image.width;
-            element.height = image.height;
-            var context = element.getContext('2d');
+        drawImage(image: HTMLImageElement): void {
+            this.canvas.width = image.width;
+            this.canvas.height = image.height;
+            var context = this.canvas.getContext('2d');
             context.drawImage(image, 0, 0);
         }
 
@@ -111,7 +74,6 @@ module Gui {
             this.colors.forEach((color) => {
                 $element.append(
                     $("<span/>")
-                        .addClass("palette")
                         .attr("id", color)
                         .css("background-color", color)
                         .on("click", (e) => {

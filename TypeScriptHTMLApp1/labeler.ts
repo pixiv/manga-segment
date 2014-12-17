@@ -8,7 +8,7 @@ module Core {
         public source: Array<Segment>;
         public seeds: Array<Segment>;
 
-        setNearest(offset: number) {
+        setNearest(offset: number): void {
             this.source.forEach((segment) => {
                 var minNorm: number = -1;
                 var nearestSeed;

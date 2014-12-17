@@ -1,4 +1,6 @@
-﻿// Represents an edge from source to sink with capacity
+﻿"use strict"
+
+// Represents an edge from source to sink with capacity
 class Edge {
     public reverseEdge: Edge = null;
     public flow: number = 0;

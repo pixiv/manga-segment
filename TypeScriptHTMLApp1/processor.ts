@@ -6,33 +6,6 @@ module Core {
 
     export class Processor {
 
-        static for_image(imageData: ImageData, handler: (data: Uint8Array, index: number) => void) {
-            var w = imageData.width;
-            var h = imageData.height;
-            var uint8Array = imageData.data;
-            for (var y = 1; y < h - 1; y += 1) {
-                for (var x = 1; x < w - 1; x += 1) {
-                    handler(uint8Array, (y * w + x) * 4);
-                }
-            }
-        }
-
-        //static for_images(input: ImageData, output: ImageData, handler: (value: number) => number) {
-        //    var w = input.width;
-        //    var h = input.height;
-        //    var inputData = input.data;
-        //    var outputData = output.data;
-        //    for (var y = 1; y < h - 1; y += 1) {
-        //        for (var x = 1; x < w - 1; x += 1) {
-        //            for (var c = 0; c < 3; c += 1) {
-        //                var i = (y * w + x) * 4 + c;
-        //                outputData[i] = handler(inputData[i]);
-        //            }
-        //            outputData[(y * w + x) * 4 + 3] = inputData[(y * w + x) * 4 + 3]
-        //        }
-        //    }
-        //}
-
         // Invert input to output
         static invert(input: Mat, output: Mat) {
             input.forPixels(output, (point: Point, value: Rgb) => new Rgb(255 - value.r, 255 - value.g, 255 - value.b));
@@ -44,28 +17,26 @@ module Core {
         }
 
         // Convert input to output as a grayscale
-        static toGray(input: Mat, output: Mat) {
-            var outputData = output.data;
-            this.for_image(input, (data: Uint8Array, index: number) => {
-                var g = data[index] * 0.2126 + data[index + 1] * 0.7152 + data[index + 2] * 0.0722;
-                outputData[index] = outputData[index + 1] = outputData[index + 2] = g;
-                outputData[index + 3] = data[index + 3];
+        static convertToGray(input: Mat, output: Mat) {
+            input.forPixels(output, (point: Point, value: Rgb): Rgb => {
+                var grayValue = value.r * 0.2126 + value.g * 0.7152 + value.b * 0.0722;
+                return new Rgb(grayValue, grayValue, grayValue);
             });
         }
 
         // Extract edges from input to output
         static extractEdge(input: Mat, output: Mat) {
-            var w = input.width
-            var h = input.height;
-            var outputData = output.data;
-            this.for_image(input, (data: Uint8Array, index: number) => {
-                for (var c = 0; c < 3; c += 1) {
-                    var i = index + c;
-                    outputData[i] = 127 + -data[i - w * 4 - 4] - data[i - w * 4] - data[i - w * 4 + 4] +
-                    -data[i - 4] + 8 * data[i] - data[i + 4] +
-                    -data[i + w * 4 - 4] - data[i + w * 4] - data[i + w * 4 + 4];
-                }
-                outputData[i + 3] = 255; // alpha
+            input.forPixels(output, (point: Point, value: Rgb): Rgb => {
+                return new Rgb(127, 127, 127)
+                    .added(input.at(point.added(new Point(-1, -1))).inverse())
+                    .added(input.at(point.added(new Point(0, -1))).inverse())
+                    .added(input.at(point.added(new Point(+1, -1))).inverse())
+                    .added(input.at(point.added(new Point(-1, 0))).inverse())
+                    .added(value.multiplied(8))
+                    .added(input.at(point.added(new Point(+1, 0))).inverse())
+                    .added(input.at(point.added(new Point(-1, +1))).inverse())
+                    .added(input.at(point.added(new Point(0, +1))).inverse())
+                    .added(input.at(point.added(new Point(+1, +1))).inverse())
             });
         }
 
@@ -128,24 +99,23 @@ module Core {
 
         // Vectorize input
         static vectorize(mat: Mat, segments: Array<Segment>) {
-            var distpt: Point;
-            var originalImage: Mat = mat.clone();
-            var width: number = mat.width;
             var directions: Array<Point> = [new Point(1, 0), new Point(1, 1), new Point(0, 1), new Point(-1, 1)];
-            mat.forPixels((point: Point, value: Rgb) => {
-                if (originalImage.at(point).is(Rgb.black)) {
+            var original: Mat = mat.clone();
+            var end: Point;
+            mat.forPixels((start: Point, value: Rgb) => {
+                if (original.at(start).is(Rgb.black)) {
                     directions.forEach((direction) => {
-                        distpt = point.clone();
-                        mat.at(distpt, Rgb.black);
-                        while (mat.at(distpt).is(Rgb.black)) {
-                            mat.at(distpt, Rgb.white);
-                            distpt.add(direction);
-                            if (!mat.isInside(distpt))
+                        end = start.clone();
+                        mat.at(end, Rgb.black);
+                        while (mat.at(end).is(Rgb.black)) {
+                            mat.at(end, Rgb.white);
+                            end.add(direction);
+                            if (!mat.isInside(end))
                                 break;
                         }
-                        distpt.add(direction.inverse());
-                        if (!point.is(distpt)) {
-                            segments.push(new Segment(point, distpt));
+                        end.add(direction.inverse());
+                        if (!start.is(end)) {
+                            segments.push(new Segment(start, end));
                         }
                     });
                 }
