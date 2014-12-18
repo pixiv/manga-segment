@@ -100,17 +100,18 @@ module Core {
         // Vectorize input
         static vectorize(mat: Mat, segments: Array<Segment>) {
             var directions: Array<Point> = [new Point(1, 0), new Point(1, 1), new Point(0, 1), new Point(-1, 1)];
-            var original: Mat = mat.clone();
+            var remaining: Mat = mat.clone();
             var end: Point;
-            mat.forPixels((start: Point, value: Rgb) => {
-                if (original.at(start).is(Rgb.black)) {
+            remaining.forPixels((start: Point, value: Rgb) => {
+                if (remaining.at(start).is(Rgb.black)) {
                     directions.forEach((direction) => {
                         end = start.clone();
-                        mat.at(end, Rgb.black);
-                        while (mat.at(end).is(Rgb.black)) {
-                            mat.at(end, Rgb.white);
+                        remaining.at(end, Rgb.black);
+                        while (remaining.at(end).is(Rgb.black)) {
+                            remaining.at(end, Rgb.white);
                             end.add(direction);
-                            if (!mat.isInside(end))
+                            if (!remaining.isInside(end))
+
                                 break;
                         }
                         end.add(direction.inverse());
@@ -121,5 +122,6 @@ module Core {
                 }
             });
         }
+
     }
 }

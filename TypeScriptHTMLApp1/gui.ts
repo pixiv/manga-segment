@@ -2,53 +2,85 @@
 
 module Gui {
 
-    export class Painter {
-        source: Mat;
-        private colors: string[] = ['red', 'blue', 'green', 'yellow', 'orange', 'purple'];
-        private current: number;
-        private context: CanvasRenderingContext2D;
-        private previous: Point = null;
-        scribble: Segments = new Array<Segment>();
-        stroke: Segments = new Array<Segment>();
+    export function convert(jpoint: JQueryEventObject): Point {
+        return new Point(Math.round(jpoint.clientX), Math.round(jpoint.clientY));
+    }
 
-        constructor(private canvas: HTMLCanvasElement, private image: HTMLImageElement) {
-            this.context = this.canvas.getContext('2d');
-            this.canvas.width = image.width;
-            this.canvas.height = image.height;
-            this.context.drawImage(image, 0, 0);
-            var imageData: ImageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
-            this.source = new Mat(imageData);
+    export var colors: string[] = ['red', 'blue', 'green', 'yellow', 'orange', 'purple'];
+
+    export class Scribbler {
+        color: string = colors[0];
+        protected previous: Point = null;
+        protected currentLabel: Label = new Core.Label(0);
+
+        constructor(protected scribbles: Array<Segments>, protected usingColors: string[]) {
         }
 
-        add(point: Point): void {
-            if (this.previous != null) {
-                var newSegment = new Segment(this.previous, point);
-                newSegment.label = new Core.Label(this.current);
-                this.scribble.push(newSegment);
-                this.previous = point;
+        drawing(): boolean {
+            return this.previous != null;
+        }
+
+        move(next: Point): Segment {
+            var newSegment = new Segment(this.previous, next);
+            newSegment.setLabel(this.currentLabel);
+            this.scribbles[this.currentLabel.toNumber()].push(newSegment);
+            this.previous = next;
+            return newSegment;
+        }
+
+        start(point: Point): void {
+            if (!this.usingColors || this.usingColors.indexOf(this.color) == -1) {
+                this.usingColors.push(this.color);
+                this.scribbles.push([]);
             }
-        }
-
-        startDrawing(point: Point): void {
+            this.currentLabel = new Label(this.usingColors.indexOf(this.color));
             this.previous = point;
         }
 
-        endDrawing(): void {
+        end(): void {
             this.previous = null;
         }
+
+        label(): Label {
+            return this.currentLabel;
+        }
+
+        setColor(color: string) {
+            this.color = color;
+        }
+    }
+
+    export class Visualizer {
+        mats: Array<[Mat, boolean]> = [];
+        scribbles: [Array<Segments>, boolean];
+        stroke: [Segments, boolean];
+        usingColors: string[];
+        protected canvas: HTMLCanvasElement;
+        protected context: CanvasRenderingContext2D;
 
         draw(): void;
         draw(mat: Mat): void;
         draw(segments: Segments): void;
-        // Draw a line from previous to current
+        // Draw a line from previous to label
         draw(segment: Segment): void;
         // Dummy for overloading
         draw(arg?: any): void {
             if (!arg) {
-                this.draw(this.source);
-                this.draw(this.scribble);
-            }
-            else if (arg instanceof Mat) {
+                this.mats.forEach((mat) => {
+                    if (mat[0] && mat[1])
+                        this.draw(mat[0]);
+                });
+                if (this.scribbles[0] && this.scribbles[1])
+                    this.scribbles[0].forEach((scribble) => {
+                        if (scribble)
+                            this.draw(scribble);
+                    });
+                if (this.stroke[0] && this.stroke[1])
+                    this.stroke[0].forEach((segments) => {
+                        if (segments)
+                            this.draw(segments);
+                    });
+            } else if (arg instanceof Mat) {
                 var mat: Mat = arg;
                 this.canvas.width = mat.width;
                 this.canvas.height = mat.height;
@@ -61,7 +93,7 @@ module Gui {
             }
             else if (arg instanceof Segment) {
                 if (0 <= arg.label.toNumber()) {
-                    this.context.strokeStyle = this.colors[arg.label.toNumber()];
+                    this.context.strokeStyle = this.usingColors[arg.label.toNumber()];
                     this.context.lineWidth = 3;
                     this.context.beginPath();
                     this.context.moveTo(arg.start.x, arg.start.y);
@@ -72,22 +104,11 @@ module Gui {
             }
         }
 
-        createPalettes($element: JQuery) {
-            this.colors.forEach((color) => {
-                $element.append(
-                    $("<span/>")
-                        .attr("id", color)
-                        .css("background-color", color)
-                        .on("click", (e) => {
-                            $("#" + this.colors[this.current], $element).toggleClass("selected");
-                            this.current = this.colors.indexOf(color);
-                            $("#" + this.colors[this.current], $element).toggleClass("selected");
-                        })
-                    );
-            });
-            this.current = 0;
-            $("#" + this.colors[this.current], $element).toggleClass("selected");
+        setCanvas(element: HTMLCanvasElement): void {
+            this.canvas = element;
+            this.context = element.getContext("2d");
         }
+
     }
 
 }

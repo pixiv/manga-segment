@@ -59,16 +59,12 @@ module Core {
         added(point: Point): Point {
             return new Point(this.x + point.x, this.y + point.y);
         }
-        //点との距離を返す
-        norm(point: Point): number {
-            return Math.sqrt(
-                Math.pow(this.x - point.x, 2)
-                + Math.pow(this.y - point.y, 2)
-                );
-        }
         //複製を返す
         clone(): Point {
             return new Point(this.x, this.y);
+        }
+        innerProduct(vector: Point): number {
+            return this.x * vector.x + this.y * vector.y;
         }
         //成分ごとに正負反転した点を返す
         inverse(): Point {
@@ -78,6 +74,19 @@ module Core {
         is(point: Point): boolean {
             return this.x == point.x && this.y == point.y;
         }
+        mul(scale: number): Point {
+            return new Point(this.x * scale, this.y * scale);
+        }
+        //点との距離を返す
+        norm(point?: Point): number {
+            return Math.sqrt(
+                Math.pow(this.x - (point ? point.x : 0), 2)
+                + Math.pow(this.y - (point ? point.y : 0), 2)
+                );
+        }
+        normalized(): Point {
+            return this.mul(1 / this.norm());
+        }
         toString(): string {
             return "(" + this.x + ", " + this.y + ")";
         }
@@ -85,7 +94,7 @@ module Core {
 
     //セグメント
     export class Segment {
-        label: Label = new Label(-1);
+        public label: Label = new Label(-1);
         //始点と終点で初期化
         constructor(public start: Point, public end: Point) {
         }
@@ -93,8 +102,17 @@ module Core {
         center(): Point {
             return this.start.added(this.end);
         }
+        direction(): Point {
+            return this.end.added(this.start.inverse()).normalized();
+        }
+        labeled(): boolean {
+            return this.label == new Label(-1);
+        }
         toString(): string {
             return "[ " + this.start.toString() + " ~ " + this.end.toString() + ": " + this.label.toNumber() + " ]";
+        }
+        setLabel(newLabel: Label): void {
+            this.label = newLabel;
         }
     }
 
@@ -120,44 +138,27 @@ module Core {
         toString(): string {
             return this.points === null ? "" : this.points.toString();
         }
-        //セグメント群に変換する
-        segments(label: number): Array<Segment> {
-            var segments: Array<Segment> = [];
-            var gap: boolean = true;
-            var previous: Point;
-            this.points.forEach((point) => {
-                if (point == null) {
-                    gap = true;
-                } else {
-                    if (gap) {
-                        gap = false;
-                    } else {
-                        var segment = new Segment(previous, point);
-                        segment.label = new Label(label);
-                        segments.push(segment);
-                    }
-                    previous = point;
-                }
-            });
-            return segments;
-        }
     }
 
     //画像
-    export class Mat {
+    export class Mat implements ImageData {
         //横縦の長さ
         public width: number;
         public height: number;
         //画素の値
-        public data: Uint8Array;
+        public data: number[];
 
+        constructor();
         //縦横と画素値で初期化
-        constructor(width: number, height: number, data: Uint8Array);
+        constructor(width: number, height: number, data: number[]);
         //ImageDataからのキャスト
         constructor(imageData: ImageData);
         //オーバーロードのためのダミー
-        constructor(arg1: any, arg2?: number, arg3?: Uint8Array) {
-            if (arg1 instanceof ImageData) {
+        constructor(arg1?: any, arg2?: number, arg3?: number[]) {
+            if (!arg1) {
+                this.width = 0;
+                this.height = 0;
+            } else if (arg1 instanceof ImageData) {
                 this.width = arg1.width;
                 this.height = arg1.height;
                 this.data = arg1.data;
@@ -194,7 +195,10 @@ module Core {
 
         //複製を返す
         clone(): Mat {
-            return new Mat(this.width, this.height, this.data);
+            var newData: number[] = new Array
+            for (var i = 0; i < this.data.length; i++)
+                newData[i] = this.data[i];
+            return new Mat(this.width, this.height, newData);
         }
 
         //画素を走査して処理する
@@ -228,6 +232,13 @@ module Core {
         copyTo(imageData: ImageData): void {
             for (var i = 0; i < this.data.length; i++)
                 imageData.data[i] = this.data[i];
+        }
+
+        toString(): string {
+            var str = "";
+            for (var i = 0; i < this.data.length; i++)
+                str += String(this.data[i]) + ", ";
+            return str;
         }
 
         //点をインデックスに変換する

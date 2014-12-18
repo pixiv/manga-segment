@@ -13,70 +13,109 @@ import Points = Core.Points;
 import Mat = Core.Mat;
 import Processor = Core.Processor;
 import Rgb = Core.Rgb;
-import Labeler = Core.Labeler;
-
-function convert(jpoint: JQueryEventObject): Point {
-    return new Point(Math.round(jpoint.clientX), Math.round(jpoint.clientY));
-}
+import NearestScribbles = Labeler.NearestScribbles;
+import Label = Core.Label;
 
 $(window).on("load", () => {
+    var source: Mat;
+    var scribbles: Array<Segments> = new Array<Array<Segment>>();
+    var stroke: Segments = new Array<Segment>();
+    var colors: string[] = [];
+
+    var scribbler: Gui.Scribbler = new Gui.Scribbler(scribbles, colors);
+    var nearestScribble: NearestScribbles = new NearestScribbles(scribbles, stroke);
+    var visualizer = new Gui.Visualizer();
+    visualizer.setCanvas(<HTMLCanvasElement> $("#canvas")[0]);
+    visualizer.usingColors = colors;
+    visualizer.scribbles = [scribbles, true];
+    visualizer.stroke = [stroke, true];
+
+    // Create palettes
+    Gui.colors.forEach((color) => {
+        $("#palettes").append(
+            $("<span/>")
+                .attr("id", color)
+                .css("background-color", color)
+                .on("click", (e) => {
+                    $("#" + scribbler.color).toggleClass("selected");
+                    scribbler.setColor(color);
+                    $(e.target).toggleClass("selected");
+                })
+            );
+    });
+    $("#" + scribbler.color, $("#palettes")).toggleClass("selected");
+
     var image: HTMLImageElement = new Image();
     image.src = "images/x.png";
-    var painter;
     $(image).on("load", () => {
-        painter = new Gui.Painter(<HTMLCanvasElement> $("#canvas")[0], image)
-        painter.draw();
-        painter.createPalettes($("#palettes"));
+        this.canvas.width = image.width;
+        this.canvas.height = image.height;
+        this.canvas.getContext('2d').drawImage(image, 0, 0);
+        var imageData: ImageData = this.canvas.getContext('2d').getImageData(0, 0, this.canvas.width, this.canvas.height);
+        source = new Mat(imageData);
+        visualizer.mats.push([source, true]);
+        visualizer.draw();
     });
+
     $("#main").on({
         "mousemove": (e) => {
-            painter.add(convert(e));
-            painter.draw();
+            if (scribbler.drawing())
+                visualizer.draw(scribbler.move(Gui.convert(e)));
         },
-        "mousedown": (e) => painter.startDrawing(convert(e)),
-        "mouseup": () => painter.endDrawing()
+        "mousedown": (e) => scribbler.start(Gui.convert(e)),
+        "mouseup": () => {
+            scribbler.end();
+            $("#scribble_text").text(scribbles.toString());
+        }
     });
+
+    $("#source").on("click", () => {
+        visualizer.mats[0][1] = $("#source").prop("checked");
+        visualizer.draw();
+    });
+
     $("#stroke").on("click", () => {
-        painter.draw(painter.source);
-        if ($("#stroke").prop("checked"))
-            painter.draw(painter.stroke);
-        if ($("#scribble").prop("checked"))
-            painter.draw(painter.scribble);
+        visualizer.stroke[1] = $("#stroke").prop("checked");
+        visualizer.draw();
     });
+
     $("#scribble").on("click", () => {
-        painter.draw(painter.source);
-        if ($("#scribble").prop("checked"))
-            painter.draw(painter.scribble);
+        visualizer.scribbles[1] = $("#scribble").prop("checked");
+        visualizer.draw();
     });
-    $("#stroke_text").on("click", () => {
-        $("#text").text(painter.stroke.toString());
-    });
-    $("#scribble_text").on("click", () => {
-        $("#text").text(painter.scribble.toString());
-    });
+
     $("#vectorize").on("click", () => {
-        Processor.vectorize(painter.source, painter.stroke);
+        Processor.vectorize(source, stroke);
+        $("#stroke_text").text(stroke.toString());
     });
+
     $("#edge").on("click", () => {
-        Processor.extractEdge(painter.source, painter.source);
-        painter.draw();
+        Processor.extractEdge(source, source);
+        visualizer.draw();
     });
+
     $("#binarize").on("click", () => {
-        Processor.binarize(painter.source, painter.source, 200);
-        painter.draw();
+        Processor.binarize(source, source, 200);
+        visualizer.draw();
     });
+
     $("#thinning").on("click", () => {
-        Processor.invert(painter.source, painter.source);
-        Processor.thinning(painter.source, painter.source);
-        Processor.invert(painter.source, painter.source);
+        Processor.invert(source, source);
+        Processor.thinning(source, source);
+        Processor.invert(source, source);
+        visualizer.draw();
     });
+
     $("#gray").on("click", () => {
-        Processor.convertToGray(painter.source, painter.source);
+        Processor.convertToGray(source, source);
+        visualizer.draw();
     });
+
     $("#labeling").on("click", () => {
-        var labeler: Labeler = new Labeler;
-        labeler.source = painter.stroke;
-        labeler.seeds = painter.scribble;
-        labeler.setNearest(50);
+        nearestScribble.setNearest(50);
+        visualizer.draw();
+        $("#source_text").text(source.toString());
+        $("#stroke_text").text(stroke.toString());
     });
+
 });
