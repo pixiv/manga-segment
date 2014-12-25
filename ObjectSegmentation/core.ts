@@ -151,10 +151,11 @@ module Core {
         constructor();
         //縦横と画素値で初期化
         constructor(width: number, height: number, data: number[]);
+        constructor(width: number, height: number, value: Rgb);
         //ImageDataからのキャスト
         constructor(imageData: ImageData);
         //オーバーロードのためのダミー
-        constructor(arg1?: any, arg2?: number, arg3?: number[]) {
+        constructor(arg1?: any, arg2?: number, arg3?: any) {
             if (!arg1) {
                 this.width = 0;
                 this.height = 0;
@@ -162,6 +163,13 @@ module Core {
                 this.width = arg1.width;
                 this.height = arg1.height;
                 this.data = arg1.data;
+            } else if (arg3 instanceof Rgb) {
+                this.width = arg1;
+                this.height = arg2;
+                this.data = new Array<number>(this.width * this.height * 4);
+                this.forPixels((pont: Point, rgb: Rgb) => {
+                    rgb = arg3;
+                });
             } else {
                 this.width = arg1;
                 this.height = arg2;

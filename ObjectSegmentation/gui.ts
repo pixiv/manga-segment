@@ -50,36 +50,43 @@ module Gui {
         }
     }
 
+    class Layer<T> {
+        object: T;
+        visible: boolean;
+    }
+
     export class Visualizer {
-        mats: Array<[Mat, boolean]> = [];
-        scribbles: [Array<Segments>, boolean];
-        stroke: [Segments, boolean];
+        mat_layer: Layer<Mat> = new Layer<Mat>();
+        scribbles_layer: Layer<Array<Segments>> = new Layer<Array<Segments>>();
+        stroke_layer: Layer<Segments> = new Layer<Segments>();
         usingColors: string[];
         protected canvas: HTMLCanvasElement;
         protected context: CanvasRenderingContext2D;
 
-        draw(): void;
+        update(): void {
+            this.draw(new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white));
+            this.draw(this.mat_layer);
+            this.draw(this.scribbles_layer);
+            this.draw(this.stroke_layer);
+        }
+
+        draw(mat_layer: Layer<Mat>): void;
         draw(mat: Mat): void;
+        draw(segments: Layer<Array<Segments>>): void;
+        draw(segments: Layer<Segments>): void;
         draw(segments: Segments): void;
         // Draw a line from previous to label
         draw(segment: Segment): void;
         // Dummy for overloading
-        draw(arg?: any): void {
-            if (!arg) {
-                this.mats.forEach((mat) => {
-                    if (mat[0] && mat[1])
-                        this.draw(mat[0]);
+        draw(arg: any): void {
+            if (arg instanceof Array) {
+                arg.forEach((element) => {
+                    this.draw(element);
                 });
-                if (this.scribbles[0] && this.scribbles[1])
-                    this.scribbles[0].forEach((scribble) => {
-                        if (scribble)
-                            this.draw(scribble);
-                    });
-                if (this.stroke[0] && this.stroke[1])
-                    this.stroke[0].forEach((segments) => {
-                        if (segments)
-                            this.draw(segments);
-                    });
+            } else if (arg instanceof Layer) {
+                if (arg.visible) {
+                    this.draw(arg.object);
+                }
             } else if (arg instanceof Mat) {
                 var mat: Mat = arg;
                 this.canvas.width = mat.width;
@@ -88,16 +95,14 @@ module Gui {
                 mat.copyTo(imageData);
                 this.context.putImageData(imageData, 0, 0);
             }
-            else if (arg instanceof Array) {
-                arg.forEach((segment) => this.draw(segment));
-            }
             else if (arg instanceof Segment) {
-                if (0 <= arg.label.toNumber()) {
-                    this.context.strokeStyle = this.usingColors[arg.label.toNumber()];
+                var segment: Segment = arg;
+                if (segment && 0 <= segment.label.toNumber()) {
+                    this.context.strokeStyle = this.usingColors[segment.label.toNumber()];
                     this.context.lineWidth = 3;
                     this.context.beginPath();
-                    this.context.moveTo(arg.start.x, arg.start.y);
-                    this.context.lineTo(arg.end.x, arg.end.y);
+                    this.context.moveTo(segment.start.x, segment.start.y);
+                    this.context.lineTo(segment.end.x, segment.end.y);
                     this.context.stroke();
                     this.context.closePath();
                 }
@@ -107,6 +112,10 @@ module Gui {
         setCanvas(element: HTMLCanvasElement): void {
             this.canvas = element;
             this.context = element.getContext("2d");
+        }
+
+        download(): void {
+            location.href = this.canvas.toDataURL();
         }
 
     }

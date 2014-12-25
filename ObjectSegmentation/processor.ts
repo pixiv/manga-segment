@@ -1,5 +1,11 @@
 ﻿/// <reference path="core.ts" />
 
+import Segment = Core.Segment;
+import Segments = Core.Segments;
+import Point = Core.Point;
+import Points = Core.Points;
+import Mat = Core.Mat;
+
 "use strict"
 
 module Core {

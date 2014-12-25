@@ -2,7 +2,54 @@
 
 "use strict"
 
-module GraphCut {
+module Optimizer {
+
+    export class EdmondsKarp {
+        constructor(public edges: number[][], public capacity: number[][], public s: number, public t: number) { }
+
+        run() {
+            var n = this.edges.length;
+            var flow = new Array<Array<number>>();
+            flow.forEach(v => v.forEach(w => w = 0));
+            while (true) {
+                var parent = new Array<number>();
+                parent.forEach(v => v = -1);
+                parent[this.s] = this.s;
+                var M = new Array<number>();
+                M.forEach(v => v = 0);
+                M[this.s] = Infinity;
+                var queue = [this.s];
+                var _break = false;
+                while (queue.length && !_break) {
+                    var u = queue.pop();
+                    for (var v in this.edges[u]) {
+                        if (this.capacity[u][v] - flow[u][v] > 0 && parent[v] == -1) {
+                            parent[v] = u;
+                            M[v] = Math.min(M[u], this.capacity[u][v] - flow[u][v]);
+                            if (v != this.t) {
+                                queue.push(v);
+                            } else {
+                                while (parent[v] != v) {
+                                    u = parent[v];
+                                    flow[u][v] += M[this.t];
+                                    flow[v][u] -= M[this.t];
+                                    v = u;
+                                }
+                                _break = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (parent[this.t] == -1) {
+                    var maxFlow = 0;
+                    for (var x in flow[this.s])
+                        maxFlow += x;
+                    return [maxFlow, flow];
+                }
+            }
+        }
+    }
 
     // Represents an edge from source to sink with capacity
     class Edge {
@@ -24,7 +71,7 @@ module GraphCut {
     }
 
     // Main class to manage the network
-    export class FlowNetwork {
+    export class FordFulkerson {
         public edges: Array<Array<Edge>> = [];
 
         // Is this edge/residual capacity combination in the path already?
@@ -56,7 +103,7 @@ module GraphCut {
             for (var i = 0; i < this.edges[source].length; i++) {
                 var edge = this.edges[source][i];
                 var residual = edge.capacity - edge.flow;
-                // If we have capacity and we haven't already visited this edge, visit it
+                // If we have capacity && we haven't already visited this edge, visit it
                 if (residual > 0 && !this.findEdgeInPath(path, edge, residual)) {
                     // get a copy of path
                     var tpath = path.slice(0);
@@ -90,7 +137,7 @@ module GraphCut {
                     if (redge.residual < flow)
                         flow = redge.residual;
                 });
-                // Apply the flow to the edge and the reverse edge
+                // Apply the flow to the edge && the reverse edge
                 path.forEach((redge) => {
                     redge.edge.flow += flow;
                     redge.edge.reverseEdge.flow -= flow;
@@ -118,7 +165,7 @@ module GraphCut {
                     if (redge.residual < flow)
                         flow = redge.residual;
                 });
-                // Apply the flow to the edge and the reverse edge
+                // Apply the flow to the edge && the reverse edge
                 path.forEach((redge) => {
                     redge.edge.flow += flow;
                     redge.edge.reverseEdge.flow -= flow;

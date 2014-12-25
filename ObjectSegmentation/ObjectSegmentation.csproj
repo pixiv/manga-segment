@@ -33,7 +33,7 @@
     <TypeScriptCompile Include="core.ts" />
     <TypeScriptCompile Include="gui.ts" />
     <TypeScriptCompile Include="main.ts" />
-    <TypeScriptCompile Include="maxflow.ts" />
+    <TypeScriptCompile Include="optimizer.ts" />
     <TypeScriptCompile Include="labeler.ts" />
     <TypeScriptCompile Include="processor.ts" />
     <TypeScriptCompile Include="Scripts\typings\jquery\jquery.d.ts" />

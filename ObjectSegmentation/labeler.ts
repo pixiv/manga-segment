@@ -1,4 +1,4 @@
-﻿/// <reference path="core.ts" />
+﻿/// <reference path="optimizer.ts" />
 
 "use strict"
 
@@ -21,7 +21,7 @@ module Labeler {
 
     export class NearestScribbles {
 
-        constructor(private seeds: Array<Segments>, public target: Array<Segment>) {
+        constructor(protected seeds: Array<Segments>, public target: Array<Segment>) {
         }
 
         setNearest(offset: number): void {
@@ -53,7 +53,8 @@ module Labeler {
             var segments_count = this.target.length;
             this.parameters.max_prox = this.parameters.sigma_smooth[Feature.Proximity] * Math.sqrt(Math.log(this.parameters.default_energy * this.parameters.sigma_smooth[Feature.Proximity]));
             var confidence: number[];
-            var cap_source: number[] = [], cap_sink: number[] = [];
+            var capacity: number[][] = new Array<Array<number>>(this.target.length + 2);
+            capacity.forEach((v) => v = new Array<number>(this.target.length + 2));
             if (this.firstTIme) {
                 this.firstTIme = false;
             }
@@ -67,27 +68,27 @@ module Labeler {
                         var SINK = this.target.length + 1;
                         for (var l = this.seeds.length - 1; 0 < l; l--) {
                             var unlabeled_num = this.target.length;
-                            var flowNetwork = new FlowNetwork();
+                            var optimizer = new Optimizer.FordFulkerson();
                             for (var i = 0; i < this.target.length; i++) {
-                                flowNetwork.addEdge(0, 1, 5);
-                                cap_source.push(this.dataTerm(this.target[i], this.seeds[l]));
+                                capacity[i][SOURCE] = capacity[SOURCE][i] = this.dataTerm(this.target[i], this.seeds[l]);
                                 var connected = [];
                                 for (var ll = 0; ll <= l - 1; ll++)
                                     Array.prototype.push.apply(connected, this.seeds[ll]);
-                                cap_sink.push(this.dataTerm(this.target[i], connected));
-                                flowNetwork.addEdge(SOURCE, i, cap_source[cap_source.length - 1]);
-                                flowNetwork.addEdge(SINK, i, cap_source[cap_source.length - 1]);
+                                capacity[i][SINK] = capacity[SINK][i] = this.dataTerm(this.target[i], connected);
+                                optimizer.addEdge(SOURCE, i, capacity[SOURCE][i]);
+                                optimizer.addEdge(SINK, i, capacity[SINK][i]);
                                 for (var j = 0; j < i; j++) {
-                                    var cap = this.smoothness_term(this.target[i], this.target[j]);
-                                    flowNetwork.addEdge(i, j, cap);
+                                    capacity[i][j] = capacity[j][i] = this.smoothness_term(this.target[i], this.target[j]);
+                                    optimizer.addEdge(i, j, capacity[i][j]);
                                 }
+                                capacity[i][i] = 0;
                             }
-                            flowNetwork.maxFlow(SOURCE, SINK);
-                            flowNetwork.findMinCut(SOURCE, SINK).forEach((node) => {
+                            optimizer.maxFlow(SOURCE, SINK);
+                            optimizer.findMinCut(SOURCE, SINK).forEach((node) => {
                                 this.target[node].setLabel(new Label(l));
                             });
                         }
-                        //まだラベルがないセグメントはラベル0とする
+                        // Assign 0 to unlabeled segments
                         this.target.forEach((segment) => {
                             if (!segment.labeled())
                                 segment.setLabel(new Label(0));

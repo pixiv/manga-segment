@@ -1,21 +1,13 @@
 ﻿/// <reference path="scripts/typings/jquery/jquery.d.ts" />
-/// <reference path="core.ts" />
 /// <reference path="processor.ts" />
 /// <reference path="gui.ts" />
 /// <reference path="labeler.ts" />
-/// <reference path="maxflow.ts" />
 
 "use strict"
 
-import Segment = Core.Segment;
-import Segments = Core.Segments;
-import Point = Core.Point;
-import Points = Core.Points;
-import Mat = Core.Mat;
 import Processor = Core.Processor;
 import Rgb = Core.Rgb;
 import Label = Core.Label;
-import FlowNetwork = GraphCut.FlowNetwork;
 
 $(window).on("load", () => {
     var source: Mat;
@@ -29,8 +21,10 @@ $(window).on("load", () => {
     var visualizer = new Gui.Visualizer();
     visualizer.setCanvas(<HTMLCanvasElement> $("#canvas")[0]);
     visualizer.usingColors = colors;
-    visualizer.scribbles = [scribbles, true];
-    visualizer.stroke = [stroke, true];
+    visualizer.scribbles_layer.object = scribbles;
+    visualizer.scribbles_layer.visible = true;
+    visualizer.stroke_layer.object = stroke;
+    visualizer.stroke_layer.visible = true;
 
     // Create palettes
     Gui.colors.forEach((color) => {
@@ -48,15 +42,16 @@ $(window).on("load", () => {
     $("#" + scribbler.color, $("#palettes")).toggleClass("selected");
 
     var image: HTMLImageElement = new Image();
-    image.src = "images/x_bin.png";
+    image.src = "images/test.png";
     $(image).on("load", () => {
         this.canvas.width = image.width;
         this.canvas.height = image.height;
         this.canvas.getContext('2d').drawImage(image, 0, 0);
         var imageData: ImageData = this.canvas.getContext('2d').getImageData(0, 0, this.canvas.width, this.canvas.height);
         source = new Mat(imageData);
-        visualizer.mats.push([source, true]);
-        visualizer.draw();
+        visualizer.mat_layer.object = source;
+        visualizer.mat_layer.visible = true;
+        visualizer.update();
     });
 
     $("#main").on({
@@ -67,72 +62,62 @@ $(window).on("load", () => {
         "mousedown": (e) => scribbler.start(Gui.convert(e)),
         "mouseup": () => {
             scribbler.end();
-            $("#scribble_text").text(scribbles.toString());
+            $("#scribble_text").text(JSON.stringify(scribbles));
         }
     });
 
-    $("#maxflow").on("click", () => {
-        var flowNetwork = new FlowNetwork();
-        flowNetwork.addEdge(3, 0, 5);
-        flowNetwork.addEdge(3, 1, 8);
-        flowNetwork.addEdge(0, 4, 8);
-        flowNetwork.addEdge(1, 0, 2);
-        flowNetwork.addEdge(1, 2, 5);
-        flowNetwork.addEdge(2, 4, 6);
-        var max = flowNetwork.maxFlow(3, 4);
-        $("#maxflow_text").text(max);
-    });
-
     $("#source").on("click", () => {
-        visualizer.mats[0][1] = $("#source").prop("checked");
-        visualizer.draw();
+        visualizer.mat_layer.visible = $("#source").prop("checked");
+        visualizer.update();
     });
 
     $("#stroke").on("click", () => {
-        visualizer.stroke[1] = $("#stroke").prop("checked");
-        visualizer.draw();
+        visualizer.stroke_layer.visible = $("#stroke").prop("checked");
+        visualizer.update();
     });
 
     $("#scribble").on("click", () => {
-        visualizer.scribbles[1] = $("#scribble").prop("checked");
-        visualizer.draw();
+        visualizer.scribbles_layer.visible = $("#scribble").prop("checked");
+        visualizer.update();
     });
 
     $("#vectorize").on("click", () => {
         Processor.vectorize(source, stroke);
-        $("#stroke_text").text(stroke.toString());
+        $("#stroke_text").text(JSON.stringify(stroke));
+        $("#source_text").text(source.toString());
     });
 
     $("#edge").on("click", () => {
         Processor.extractEdge(source, source);
-        visualizer.draw();
+        visualizer.update();
     });
 
     $("#binarize").on("click", () => {
         Processor.binarize(source, source, 200);
-        visualizer.draw();
+        visualizer.update();
     });
 
     $("#thinning").on("click", () => {
         Processor.invert(source, source);
         Processor.thinning(source, source);
         Processor.invert(source, source);
-        visualizer.draw();
-        var tes = <HTMLImageElement> $("#for_saving")[0];
-        (tes).src = (<HTMLCanvasElement> $("#canvas")[0]).toDataURL("image/png");
+        visualizer.update();
+        $("#source_text").text(source.toString());
     });
 
     $("#gray").on("click", () => {
         Processor.convertToGray(source, source);
-        visualizer.draw();
+        visualizer.update();
     });
 
     $("#labeling").on("click", () => {
         nearestScribble.setNearest(50);
         smartScribble.run();
-        visualizer.draw();
+        visualizer.update();
         $("#source_text").text(source.toString());
-        $("#stroke_text").text(stroke.toString());
+        $("#stroke_text").text(JSON.stringify(stroke));
     });
+
+    $("#save").on("click", () => visualizer.download());
 
 });
