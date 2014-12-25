@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Express 2013 for Web
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeScriptHTMLApp1", "TypeScriptHTMLApp1\TypeScriptHTMLApp1.csproj", "{B35947FD-8A19-4D04-AB05-71AFC4B20F54}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectSegmentation", "ObjectSegmentation\ObjectSegmentation.csproj", "{B35947FD-8A19-4D04-AB05-71AFC4B20F54}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

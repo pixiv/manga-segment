@@ -1,5 +1,5 @@
 *.map
 *.js
-TypeScriptHTMLApp1/bin/
-TypeScriptHTMLApp1/obj/
+ObjectSegmentation/bin/
+ObjectSegmentation/obj/
 *.png
