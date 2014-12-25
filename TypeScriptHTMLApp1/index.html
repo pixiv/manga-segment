@@ -6,6 +6,7 @@
     <script src="Scripts/jquery-2.1.1.js"></script>
     <script src="core.js"></script>
     <script src="processor.js"></script>
+    <script src="maxflow.js"></script>
     <script src="labeler.js"></script>
     <script src="gui.js"></script>
     <script src="main.js"></script>
@@ -21,6 +22,7 @@
 
         <fieldset class="processing">
             <legend>Process</legend>
+            <button id="maxflow">MaxFlow</button>
             <button id="edge">Edge</button>
             <button id="gray">Gray</button>
             <button id="binarize">Binarize</button>
@@ -34,6 +36,11 @@
             <input type="checkbox" id="source" /><label for="source">Source</label>
             <input type="checkbox" id="stroke" /><label for="stroke">Stroke</label>
             <input type="checkbox" id="scribble" /><label for="scribble">Scribble</label>
+        </fieldset>
+
+        <fieldset>
+            <legend>MaxFlow</legend>
+            <span id="maxflow_text"></span>
         </fieldset>
 
         <fieldset>
@@ -52,6 +59,8 @@
         </fieldset>
 
     </form>
+
+    <!--<img id="for_saving" src="images/x_bin.png" />-->
 
 </body>
 </html>

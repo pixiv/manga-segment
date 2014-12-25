@@ -3,6 +3,7 @@
 /// <reference path="processor.ts" />
 /// <reference path="gui.ts" />
 /// <reference path="labeler.ts" />
+/// <reference path="maxflow.ts" />
 
 "use strict"
 
@@ -13,8 +14,8 @@ import Points = Core.Points;
 import Mat = Core.Mat;
 import Processor = Core.Processor;
 import Rgb = Core.Rgb;
-import NearestScribbles = Labeler.NearestScribbles;
 import Label = Core.Label;
+import FlowNetwork = GraphCut.FlowNetwork;
 
 $(window).on("load", () => {
     var source: Mat;
@@ -23,7 +24,8 @@ $(window).on("load", () => {
     var colors: string[] = [];
 
     var scribbler: Gui.Scribbler = new Gui.Scribbler(scribbles, colors);
-    var nearestScribble: NearestScribbles = new NearestScribbles(scribbles, stroke);
+    var nearestScribble: Labeler.NearestScribbles = new Labeler.NearestScribbles(scribbles, stroke);
+    var smartScribble: Labeler.SmartScribbles = new Labeler.SmartScribbles(scribbles, stroke);
     var visualizer = new Gui.Visualizer();
     visualizer.setCanvas(<HTMLCanvasElement> $("#canvas")[0]);
     visualizer.usingColors = colors;
@@ -46,7 +48,7 @@ $(window).on("load", () => {
     $("#" + scribbler.color, $("#palettes")).toggleClass("selected");
 
     var image: HTMLImageElement = new Image();
-    image.src = "images/x.png";
+    image.src = "images/x_bin.png";
     $(image).on("load", () => {
         this.canvas.width = image.width;
         this.canvas.height = image.height;
@@ -67,6 +69,18 @@ $(window).on("load", () => {
             scribbler.end();
             $("#scribble_text").text(scribbles.toString());
         }
+    });
+
+    $("#maxflow").on("click", () => {
+        var flowNetwork = new FlowNetwork();
+        flowNetwork.addEdge(3, 0, 5);
+        flowNetwork.addEdge(3, 1, 8);
+        flowNetwork.addEdge(0, 4, 8);
+        flowNetwork.addEdge(1, 0, 2);
+        flowNetwork.addEdge(1, 2, 5);
+        flowNetwork.addEdge(2, 4, 6);
+        var max = flowNetwork.maxFlow(3, 4);
+        $("#maxflow_text").text(max);
     });
 
     $("#source").on("click", () => {
@@ -104,6 +118,8 @@ $(window).on("load", () => {
         Processor.thinning(source, source);
         Processor.invert(source, source);
         visualizer.draw();
+        var tes = <HTMLImageElement> $("#for_saving")[0];
+        (tes).src = (<HTMLCanvasElement> $("#canvas")[0]).toDataURL("image/png");
     });
 
     $("#gray").on("click", () => {
@@ -113,6 +129,7 @@ $(window).on("load", () => {
 
     $("#labeling").on("click", () => {
         nearestScribble.setNearest(50);
+        smartScribble.run();
         visualizer.draw();
         $("#source_text").text(source.toString());
         $("#stroke_text").text(stroke.toString());

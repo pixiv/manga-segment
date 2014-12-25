@@ -111,7 +111,6 @@ module Core {
                             remaining.at(end, Rgb.white);
                             end.add(direction);
                             if (!remaining.isInside(end))
-
                                 break;
                         }
                         end.add(direction.inverse());
