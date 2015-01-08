@@ -50,11 +50,17 @@ module Labeler {
         }
 
         run() {
-            var segments_count = this.target.length;
+            var NODENUM = this.target.length + 2;
+            var SOURCE = this.target.length;
+            var SINK = this.target.length + 1;
             this.parameters.max_prox = this.parameters.sigma_smooth[Feature.Proximity] * Math.sqrt(Math.log(this.parameters.default_energy * this.parameters.sigma_smooth[Feature.Proximity]));
             var confidence: number[];
-            var capacity: number[][] = new Array<Array<number>>(this.target.length + 2);
-            capacity.forEach((v) => v = new Array<number>(this.target.length + 2));
+            var edges: number[][] = [];
+            for (var i = 0; i < NODENUM; i++)
+                edges[i] = [];
+            var capacity: number[][] = [];
+            for (var i = 0; i < NODENUM; i++)
+                capacity[i] = new Array<number>(NODENUM);
             if (this.firstTIme) {
                 this.firstTIme = false;
             }
@@ -64,35 +70,41 @@ module Labeler {
                     return;
                 default: // マウス入力が２つ以上の場合
                     {
-                        var SOURCE = this.target.length;
-                        var SINK = this.target.length + 1;
                         for (var l = this.seeds.length - 1; 0 < l; l--) {
-                            var unlabeled_num = this.target.length;
-                            var optimizer = new Optimizer.FordFulkerson();
+                            var connected: Segment[] = [];
+                            for (var ll = 0; ll <= l - 1; ll++)
+                                Array.prototype.push.apply(connected, this.seeds[ll]);
                             for (var i = 0; i < this.target.length; i++) {
                                 capacity[i][SOURCE] = capacity[SOURCE][i] = this.dataTerm(this.target[i], this.seeds[l]);
-                                var connected = [];
-                                for (var ll = 0; ll <= l - 1; ll++)
-                                    Array.prototype.push.apply(connected, this.seeds[ll]);
+                                if (0 < capacity[i][SOURCE]) {
+                                    edges[i].push(SOURCE);
+                                    edges[SOURCE].push(i);
+                                }
                                 capacity[i][SINK] = capacity[SINK][i] = this.dataTerm(this.target[i], connected);
-                                optimizer.addEdge(SOURCE, i, capacity[SOURCE][i]);
-                                optimizer.addEdge(SINK, i, capacity[SINK][i]);
+                                if (0 < capacity[i][SINK]) {
+                                    edges[i].push(SINK);
+                                    edges[SINK].push(i);
+                                }
                                 for (var j = 0; j < i; j++) {
                                     capacity[i][j] = capacity[j][i] = this.smoothness_term(this.target[i], this.target[j]);
-                                    optimizer.addEdge(i, j, capacity[i][j]);
+                                    if (0 < capacity[i][j]) {
+                                        edges[i].push(j);
+                                        edges[j].push(i);
+                                    }
                                 }
                                 capacity[i][i] = 0;
                             }
-                            optimizer.maxFlow(SOURCE, SINK);
-                            optimizer.findMinCut(SOURCE, SINK).forEach((node) => {
-                                this.target[node].setLabel(new Label(l));
-                            });
+                            var optimizer = new Optimizer.EdmondsKarp(edges, capacity);
+                            for (var node in optimizer.findMinCut(SOURCE, SINK)) {
+                                if (node < this.target.length)
+                                    this.target[node].setLabel(new Label(l));
+                            }
                         }
                         // Assign 0 to unlabeled segments
-                        this.target.forEach((segment) => {
-                            if (!segment.labeled())
-                                segment.setLabel(new Label(0));
-                        });
+                        for (var k in this.target) {
+                            if (!this.target[k].labeled())
+                                this.target[k].setLabel(new Label(0));
+                        }
                     }
             }
         }
@@ -131,7 +143,7 @@ module Labeler {
         }
 
         private dataTerm(s1: Segment, segments: Segments): number {
-            var max_affinity = this.parameters.default_energy, affinity;
+            var max_affinity = this.parameters.default_energy, affinity: number;
             segments.forEach((segment) => {
                 affinity = 1;
                 Features.forEach((feature) => {

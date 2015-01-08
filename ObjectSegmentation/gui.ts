@@ -80,7 +80,7 @@ module Gui {
         // Dummy for overloading
         draw(arg: any): void {
             if (arg instanceof Array) {
-                arg.forEach((element) => {
+                arg.forEach((element: any) => {
                     this.draw(element);
                 });
             } else if (arg instanceof Layer) {
@@ -97,8 +97,8 @@ module Gui {
             }
             else if (arg instanceof Segment) {
                 var segment: Segment = arg;
-                if (segment && 0 <= segment.label.toNumber()) {
-                    this.context.strokeStyle = this.usingColors[segment.label.toNumber()];
+                if (segment) {
+                    this.context.strokeStyle = (segment.label.toNumber() < 0) ? 'black' : this.usingColors[segment.label.toNumber()];
                     this.context.lineWidth = 3;
                     this.context.beginPath();
                     this.context.moveTo(segment.start.x, segment.start.y);

@@ -3,7 +3,6 @@
 import Segment = Core.Segment;
 import Segments = Core.Segments;
 import Point = Core.Point;
-import Points = Core.Points;
 import Mat = Core.Mat;
 
 "use strict"
@@ -52,34 +51,32 @@ module Core {
             var h = input.height;
             var inputData = input.data;
             var outputData = output.data;
-            var x, y, rAry;
+            var rAry: Uint8Array;
             for (var i: number = 0; i < outputData.length; i++)
                 outputData[i] = inputData[i];
             var bFlag = true;
 
             for (var k = 0; k < 100 && bFlag; k++) {
-                if (!(k & 1)) {
+                if (!(k & 1))
                     bFlag = false;
-                }
                 rAry = new Uint8Array(outputData);
-                for (y = 1; y < h - 1; y++) {
-                    for (x = 1; x < w - 1; x++) {
+                for (var y = 1; y < h - 1; y++) {
+                    for (var x = 1; x < w - 1; x++) {
                         var i = (y * w + x) * 4;
                         if (rAry[i]) {
-                            var a, b, p1, p2, p3, p4, p5, p6, p7, p8, p9;
                             // [p9 p2 p3]
                             // [p8 p1 p4]
                             // [p7 p6 p5]
-                            p1 = 1;
-                            p2 = (rAry[i - w * 4]) ? 1 : 0;
-                            p3 = (rAry[i - w * 4 + 4]) ? 1 : 0;
-                            p4 = (rAry[i + 4]) ? 1 : 0;
-                            p5 = (rAry[i + w * 4 + 4]) ? 1 : 0;
-                            p6 = (rAry[i + w * 4]) ? 1 : 0;
-                            p7 = (rAry[i + w * 4 - 4]) ? 1 : 0;
-                            p8 = (rAry[i - 4]) ? 1 : 0;
-                            p9 = (rAry[i - w * 4 - 4]) ? 1 : 0;
-                            a = 0;
+                            var p1 = 1;
+                            var p2 = (rAry[i - w * 4]) ? 1 : 0;
+                            var p3 = (rAry[i - w * 4 + 4]) ? 1 : 0;
+                            var p4 = (rAry[i + 4]) ? 1 : 0;
+                            var p5 = (rAry[i + w * 4 + 4]) ? 1 : 0;
+                            var p6 = (rAry[i + w * 4]) ? 1 : 0;
+                            var p7 = (rAry[i + w * 4 - 4]) ? 1 : 0;
+                            var p8 = (rAry[i - 4]) ? 1 : 0;
+                            var p9 = (rAry[i - w * 4 - 4]) ? 1 : 0;
+                            var a = 0;
                             if (!p2 && p3) { a++; }
                             if (!p3 && p4) { a++; }
                             if (!p4 && p5) { a++; }
@@ -88,7 +85,7 @@ module Core {
                             if (!p7 && p8) { a++; }
                             if (!p8 && p9) { a++; }
                             if (!p9 && p2) { a++; }
-                            b = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
+                            var b = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
 
                             if (a == 1 && 2 <= b && b <= 6) {
                                 if ((!(k & 1) && p2 * p4 * p6 == 0 && p4 * p6 * p8 == 0)

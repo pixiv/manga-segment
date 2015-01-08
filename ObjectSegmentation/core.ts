@@ -7,6 +7,9 @@ module Core {
         //数値で初期化
         constructor(private id: number) {
         }
+        is(label: Label) {
+            return this.id == label.toNumber();
+        }
         //数値へのキャスト
         toNumber(): number {
             return this.id;
@@ -48,7 +51,7 @@ module Core {
     //点
     export class Point {
         //座標で初期化
-        constructor(public x: number, public y: number) {
+        constructor(public x: number = -1, public y: number = -1) {
         }
         //座標を成分ごとに加算する
         add(point: Point) {
@@ -96,7 +99,7 @@ module Core {
     export class Segment {
         public label: Label = new Label(-1);
         //始点と終点で初期化
-        constructor(public start: Point, public end: Point) {
+        constructor(public start: Point = new Point(), public end: Point = new Point()) {
         }
         //重心を返す
         center(): Point {
@@ -106,7 +109,7 @@ module Core {
             return this.end.added(this.start.inverse()).normalized();
         }
         labeled(): boolean {
-            return this.label == new Label(-1);
+            return this.label.is(new Label(-1));
         }
         toString(): string {
             return "[ " + this.start.toString() + " ~ " + this.end.toString() + ": " + this.label.toNumber() + " ]";
@@ -117,28 +120,6 @@ module Core {
     }
 
     export interface Segments extends Array<Segment> { };
-
-    //ストローク
-    export class Points {
-        //点群で初期化
-        constructor(public points?: Array<Point>) {
-        }
-        //空にする
-        clear(): void {
-            this.points.length = 0;
-        }
-        //複製を返す
-        clone(): Points {
-            return new Points(this.points);
-        }
-        //空かどうかを返す
-        empty(): boolean {
-            return this.points === undefined || this.points.length == 0;
-        }
-        toString(): string {
-            return this.points === null ? "" : this.points.toString();
-        }
-    }
 
     //画像
     export class Mat implements ImageData {
@@ -180,11 +161,11 @@ module Core {
         //点に対応する画素値を返す
         at(point: Point): Rgb;
         //点に画素値を設定する
-        at(point: Point, value: Rgb);
+        at(point: Point, value: Rgb): void;
         //インデックスに対応する画素値を返す
         at(index: number): Rgb;
         //インデックスに画素値を設定する
-        at(index: number, value: Rgb);
+        at(index: number, value: Rgb): void;
         //オーバーロードのためのダミー
         at(arg1: any, arg2?: any): Rgb {
             //点ならインデックスに変換する
@@ -210,9 +191,9 @@ module Core {
         }
 
         //画素を走査して処理する
-        forPixels(output: Mat, handler: (point: Point, value: Rgb) => Rgb);
+        forPixels(output: Mat, handler: (point: Point, value: Rgb) => Rgb): void;
         //画素を走査して処理する
-        forPixels(handler: (point: Point, value: Rgb) => void);
+        forPixels(handler: (point: Point, value: Rgb) => void): void;
         //オーバーロードのためのダミー
         forPixels(arg1: any, arg2?: any) {
             if (arg1 instanceof Mat) {

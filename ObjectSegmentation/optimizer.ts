@@ -5,47 +5,115 @@
 module Optimizer {
 
     export class EdmondsKarp {
-        constructor(public edges: number[][], public capacity: number[][], public s: number, public t: number) { }
+        constructor(public edges: number[][], public capacity: number[][]) {
+        }
 
-        run() {
-            var n = this.edges.length;
-            var flow = new Array<Array<number>>();
-            flow.forEach(v => v.forEach(w => w = 0));
+        maxflow(s: number, t: number): [number, number[][]] {
+            var n = this.capacity.length;
+            var flow: number[][] = [];
+            for (var j = 0; j < n; j++) {
+                var row: number[] = [];
+                for (var k = 0; k < n; k++)
+                    row.push(0);
+                flow.push(row);
+            }
             while (true) {
-                var parent = new Array<number>();
-                parent.forEach(v => v = -1);
-                parent[this.s] = this.s;
-                var M = new Array<number>();
-                M.forEach(v => v = 0);
-                M[this.s] = Infinity;
-                var queue = [this.s];
+                var parent: number[] = [];
+                for (var k = 0; k < n; k++)
+                    parent.push(-1);
+                parent[s] = s;
+                var M: number[] = [];
+                for (var k = 0; k < n; k++)
+                    M.push(0);
+                M[s] = Infinity;
+                var queue = [s];
                 var _break = false;
-                while (queue.length && !_break) {
+                while (0 < queue.length && !_break) {
                     var u = queue.pop();
-                    for (var v in this.edges[u]) {
+                    this.edges[u].forEach(v => {
                         if (this.capacity[u][v] - flow[u][v] > 0 && parent[v] == -1) {
                             parent[v] = u;
                             M[v] = Math.min(M[u], this.capacity[u][v] - flow[u][v]);
-                            if (v != this.t) {
+                            if (v != t) {
                                 queue.push(v);
                             } else {
                                 while (parent[v] != v) {
                                     u = parent[v];
-                                    flow[u][v] += M[this.t];
-                                    flow[v][u] -= M[this.t];
+                                    flow[u][v] += M[t];
+                                    flow[v][u] -= M[t];
                                     v = u;
                                 }
                                 _break = true;
-                                break;
+                                return;
                             }
                         }
-                    }
+                    });
                 }
-                if (parent[this.t] == -1) {
-                    var maxFlow = 0;
-                    for (var x in flow[this.s])
-                        maxFlow += x;
+                if (parent[t] == -1) {
+                    var maxFlow = flow[s].reduce((v, w) => v + w);
                     return [maxFlow, flow];
+                }
+            }
+        }
+
+        // Finds nodes in the side of source
+        findPositiveNodes(source: number, result: number[]) {
+            result.push(source);
+            this.capacity[source].forEach((cap, index) => {
+                if (0 < cap && result.indexOf(index) < 0) {
+                    Array.prototype.push.apply(result, this.findPositiveNodes(index, result));
+                }
+            });
+        }
+
+        findMinCut(s: number, t: number): number[] {
+            var n = this.capacity.length;
+            var flow: number[][] = [];
+            for (var j = 0; j < n; j++) {
+                var row: number[] = [];
+                for (var k = 0; k < n; k++)
+                    row.push(0);
+                flow.push(row);
+            }
+            while (true) {
+                var parent: number[] = [];
+                for (var k = 0; k < n; k++)
+                    parent.push(-1);
+                parent[s] = s;
+                var M: number[] = [];
+                for (var k = 0; k < n; k++)
+                    M.push(0);
+                M[s] = Infinity;
+                var queue = [s];
+                var _break = false;
+                while (0 < queue.length && !_break) {
+                    var u = queue.pop();
+                    this.edges[u].forEach(v => {
+                        if (this.capacity[u][v] - flow[u][v] > 0 && parent[v] == -1) {
+                            parent[v] = u;
+                            M[v] = Math.min(M[u], this.capacity[u][v] - flow[u][v]);
+                            if (v != t) {
+                                queue.push(v);
+                            } else {
+                                while (parent[v] != v) {
+                                    u = parent[v];
+                                    flow[u][v] += M[t];
+                                    flow[v][u] -= M[t];
+                                    v = u;
+                                }
+                                _break = true;
+                                return;
+                            }
+                        }
+                    });
+                }
+                if (parent[t] == -1) {
+                    for (var i = 0; i < this.capacity.length; i++)
+                        for (var j = 0; j < this.capacity[i].length; j++)
+                            this.capacity[i][j] -= flow[i][j];
+                    var result: number[] = [];
+                    this.findPositiveNodes(s, result);
+                    return result;
                 }
             }
         }
@@ -72,15 +140,15 @@ module Optimizer {
 
     // Main class to manage the network
     export class FordFulkerson {
-        public edges: Array<Array<Edge>> = [];
-
-        // Is this edge/residual capacity combination in the path already?
-        findEdgeInPath(path: ResidualEdge[], edge: Edge, residual: number): boolean {
-            for (var p = 0; p < path.length; p++)
-                if (path[p].edge == edge && path[p].residual == residual)
-                    return true;
-            return false;
+        constructor(edges: number[][], capacity: number[][]) {
+            for (var i = 0; i < capacity.length; i++) {
+                for (var j = 0; j < i; j++) {
+                    this.addEdge(i, j, capacity[i][j]);
+                }
+            }
         }
+
+        public edges: Array<Array<Edge>> = [];
 
         addEdge(source: number, sink: number, capacity: number) {
             if (source == sink) return;
@@ -94,6 +162,14 @@ module Optimizer {
             if (this.edges[sink] === undefined) this.edges[sink] = [];
             this.edges[source].push(edge);
             this.edges[sink].push(reverseEdge);
+        }
+
+        // Is this edge/residual capacity combination in the path already?
+        private findEdgeInPath(path: ResidualEdge[], edge: Edge, residual: number): boolean {
+            for (var p = 0; p < path.length; p++)
+                if (path[p].edge == edge && path[p].residual == residual)
+                    return true;
+            return false;
         }
 
         // Finds a path from source to sink
