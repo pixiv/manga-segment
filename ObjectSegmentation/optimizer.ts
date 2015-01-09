@@ -5,115 +5,77 @@
 module Optimizer {
 
     export class EdmondsKarp {
+        node_count: number;
+        flow: number[][] = [];
+
         constructor(public edges: number[][], public capacity: number[][]) {
+            this.node_count = this.capacity.length;
+            for (var j = 0; j < this.node_count; j++) {
+                var row: number[] = [];
+                for (var k = 0; k < this.node_count; k++)
+                    row.push(0);
+                this.flow.push(row);
+            }
         }
 
-        maxflow(s: number, t: number): [number, number[][]] {
-            var n = this.capacity.length;
-            var flow: number[][] = [];
-            for (var j = 0; j < n; j++) {
-                var row: number[] = [];
-                for (var k = 0; k < n; k++)
-                    row.push(0);
-                flow.push(row);
-            }
-            while (true) {
-                var parent: number[] = [];
-                for (var k = 0; k < n; k++)
-                    parent.push(-1);
-                parent[s] = s;
-                var M: number[] = [];
-                for (var k = 0; k < n; k++)
-                    M.push(0);
-                M[s] = Infinity;
-                var queue = [s];
-                var _break = false;
-                while (0 < queue.length && !_break) {
-                    var u = queue.pop();
-                    this.edges[u].forEach(v => {
-                        if (this.capacity[u][v] - flow[u][v] > 0 && parent[v] == -1) {
-                            parent[v] = u;
-                            M[v] = Math.min(M[u], this.capacity[u][v] - flow[u][v]);
-                            if (v != t) {
-                                queue.push(v);
-                            } else {
-                                while (parent[v] != v) {
-                                    u = parent[v];
-                                    flow[u][v] += M[t];
-                                    flow[v][u] -= M[t];
-                                    v = u;
-                                }
-                                _break = true;
-                                return;
-                            }
-                        }
-                    });
-                }
-                if (parent[t] == -1) {
-                    var maxFlow = flow[s].reduce((v, w) => v + w);
-                    return [maxFlow, flow];
-                }
-            }
+        maxflow(s: number, t: number): number {
+            this.calculateFlow(s, t);
+            return this.flow[s].reduce((v, w) => v + w);
+        }
+
+        minCut(s: number, t: number): number[] {
+            this.calculateFlow(s, t);
+            var result: number[] = [];
+            this.findPositiveNodes(s, result);
+            return result;
         }
 
         // Finds nodes in the side of source
-        findPositiveNodes(source: number, result: number[]) {
+        private findPositiveNodes(source: number, result: number[]) {
             result.push(source);
-            this.capacity[source].forEach((cap, index) => {
-                if (0 < cap && result.indexOf(index) < 0) {
+            for (var index in this.capacity[source]) {
+                if (this.flow[source][index] < this.capacity[source][index] && result.indexOf(index) < 0) {
                     Array.prototype.push.apply(result, this.findPositiveNodes(index, result));
                 }
-            });
+            }
         }
 
-        findMinCut(s: number, t: number): number[] {
-            var n = this.capacity.length;
-            var flow: number[][] = [];
-            for (var j = 0; j < n; j++) {
-                var row: number[] = [];
-                for (var k = 0; k < n; k++)
-                    row.push(0);
-                flow.push(row);
-            }
+        private calculateFlow(s: number, t: number): void {
             while (true) {
                 var parent: number[] = [];
-                for (var k = 0; k < n; k++)
+                for (var k = 0; k < this.node_count; k++)
                     parent.push(-1);
                 parent[s] = s;
                 var M: number[] = [];
-                for (var k = 0; k < n; k++)
+                for (var k = 0; k < this.node_count; k++)
                     M.push(0);
                 M[s] = Infinity;
                 var queue = [s];
                 var _break = false;
                 while (0 < queue.length && !_break) {
                     var u = queue.pop();
-                    this.edges[u].forEach(v => {
-                        if (this.capacity[u][v] - flow[u][v] > 0 && parent[v] == -1) {
+                    for (var i in this.edges[u]) {
+                        var v = this.edges[u][i];
+                        if (this.capacity[u][v] - this.flow[u][v] > 0 && parent[v] == -1) {
                             parent[v] = u;
-                            M[v] = Math.min(M[u], this.capacity[u][v] - flow[u][v]);
+                            M[v] = Math.min(M[u], this.capacity[u][v] - this.flow[u][v]);
                             if (v != t) {
                                 queue.push(v);
                             } else {
                                 while (parent[v] != v) {
                                     u = parent[v];
-                                    flow[u][v] += M[t];
-                                    flow[v][u] -= M[t];
+                                    this.flow[u][v] += M[t];
+                                    this.flow[v][u] -= M[t];
                                     v = u;
                                 }
                                 _break = true;
-                                return;
+                                break;
                             }
                         }
-                    });
+                    }
                 }
                 if (parent[t] == -1) {
-                    for (var i = 0; i < this.capacity.length; i++)
-                        for (var j = 0; j < this.capacity[i].length; j++)
-                            this.capacity[i][j] -= flow[i][j];
-                    var result: number[] = [];
-                    this.findPositiveNodes(s, result);
-                    return result;
+                    return;
                 }
             }
         }

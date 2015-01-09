@@ -32,23 +32,23 @@ $(window).on("load", () => {
             $("#stroke_text").text(JSON.stringify(stroke));
             visualizer.update();
         });
-    $.getJSON("images/x_input.js", (json) => {
-        colors.length = 0;
-        scribbles.length = 0;
-        for (var member in json) {
-            colors.push(Gui.colors[member]);
-            scribbles.push(new Array<Segment>());
-            for (var submember in json[member]) {
-                var back = scribbles[scribbles.length - 1];
-                back.push(new Segment());
-                extend(back[back.length-1], json[member][submember]);
-            }
-        }
-    })
-        .done(() => {
-            $("#scribble_text").text(JSON.stringify(scribbles));
-            visualizer.update();
-        });
+    //$.getJSON("images/x_input.js", (json) => {
+    //    colors.length = 0;
+    //    scribbles.length = 0;
+    //    for (var member in json) {
+    //        colors.push(Gui.colors[member]);
+    //        scribbles.push(new Array<Segment>());
+    //        for (var submember in json[member]) {
+    //            var back = scribbles[scribbles.length - 1];
+    //            back.push(new Segment());
+    //            extend(back[back.length - 1], json[member][submember]);
+    //        }
+    //    }
+    //})
+    //    .done(() => {
+    //        $("#scribble_text").text(JSON.stringify(scribbles));
+    //        visualizer.update();
+    //    });
     var colors: string[] = [];
 
     var scribbler: Gui.Scribbler = new Gui.Scribbler(scribbles, colors);
@@ -90,12 +90,17 @@ $(window).on("load", () => {
         visualizer.mat_layer.visible = false;
         visualizer.update();
 
-        //var optimizer = new Optimizer.EdmondsKarp([[1, 2],
-        //    [0, 2],
-        //    [0, 1]], [[0, 5, 3],
-        //        [5, 0, 4],
-        //        [3, 4, 0]]);
-        //var r = optimizer.maxflow(0, 2);
+        //var edges: number[][] = [[1, 2], [2, 3], [4], [4, 5], [5], []];
+        //var capacity: number[][] = [
+        //    [0, 3, 3, 0, 0, 0],
+        //    [0, 0, 2, 3, 0, 0],
+        //    [0, 0, 0, 0, 2, 0],
+        //    [0, 0, 0, 0, 4, 2],
+        //    [0, 0, 0, 0, 0, 3],
+        //    [0, 0, 0, 0, 0, 0]
+        //];
+        //var optimizer = new Optimizer.EdmondsKarp(edges, capacity);
+        //var r = optimizer.minCut(0, 5);
     });
 
     $("#main").on({
@@ -146,7 +151,7 @@ $(window).on("load", () => {
         Processor.thinning(source, source);
         Processor.invert(source, source);
         visualizer.update();
-        $("#source_text").text(source.toString());
+        //$("#source_text").text(source.toString());
     });
 
     $("#gray").on("click", () => {
@@ -155,11 +160,17 @@ $(window).on("load", () => {
     });
 
     $("#labeling").on("click", () => {
-        nearestScribble.setNearest(50);
+        //nearestScribble.setNearest(50);
         smartScribble.run();
         visualizer.update();
-        $("#source_text").text(source.toString());
+        //$("#source_text").text(source.toString());
+        var n: number[] = [];
+        for (var i = 0; i < stroke.length; i++) {
+            n.push(stroke[i].label.toNumber());
+        }
+        $("#label_text").text(JSON.stringify(n));
         $("#stroke_text").text(JSON.stringify(stroke));
+        $("#optimization_text").text(JSON.stringify(smartScribble.capacity));
     });
 
     $("#save").on("click", () => visualizer.download());

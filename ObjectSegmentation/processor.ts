@@ -33,15 +33,15 @@ module Core {
         static extractEdge(input: Mat, output: Mat) {
             input.forPixels(output, (point: Point, value: Rgb): Rgb => {
                 return new Rgb(127, 127, 127)
-                    .added(input.at(point.added(new Point(-1, -1))).inverse())
-                    .added(input.at(point.added(new Point(0, -1))).inverse())
-                    .added(input.at(point.added(new Point(+1, -1))).inverse())
-                    .added(input.at(point.added(new Point(-1, 0))).inverse())
-                    .added(value.multiplied(8))
-                    .added(input.at(point.added(new Point(+1, 0))).inverse())
-                    .added(input.at(point.added(new Point(-1, +1))).inverse())
-                    .added(input.at(point.added(new Point(0, +1))).inverse())
-                    .added(input.at(point.added(new Point(+1, +1))).inverse())
+                    .add(input.at(point.added(new Point(-1, -1))).invert())
+                    .add(input.at(point.added(new Point(0, -1))).invert())
+                    .add(input.at(point.added(new Point(+1, -1))).invert())
+                    .add(input.at(point.added(new Point(-1, 0))).invert())
+                    .add(value.multiplied(8))
+                    .add(input.at(point.added(new Point(+1, 0))).invert())
+                    .add(input.at(point.added(new Point(-1, +1))).invert())
+                    .add(input.at(point.added(new Point(0, +1))).invert())
+                    .add(input.at(point.added(new Point(+1, +1))).invert())
             });
         }
 
@@ -116,7 +116,7 @@ module Core {
                             if (!remaining.isInside(end))
                                 break;
                         }
-                        end.add(direction.inverse());
+                        end.add(direction.inverted());
                         if (!start.is(end)) {
                             segments.push(new Segment(start, end));
                         }

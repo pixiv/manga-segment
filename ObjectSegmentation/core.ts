@@ -4,11 +4,12 @@ module Core {
 
     //セグメントに振るラベル
     export class Label {
+        public static None = new Label();
         //数値で初期化
-        constructor(private id: number) {
+        constructor(private id: number = -1) {
         }
         is(label: Label) {
-            return this.id == label.toNumber();
+            return this.toNumber() == label.toNumber();
         }
         //数値へのキャスト
         toNumber(): number {
@@ -25,10 +26,11 @@ module Core {
         constructor(public r: number, public g: number, public b: number) {
         }
         //色を成分ごとに加算する
-        add(color: Rgb) {
+        add(color: Rgb): Rgb {
             this.r += color.r;
             this.g += color.g;
             this.b += color.b;
+            return this;
         }
         //色を成分ごとに加算した色を返す
         added(color: Rgb): Rgb {
@@ -39,8 +41,11 @@ module Core {
             return new Rgb(this.r * num, this.g * num, this.b * num);
         }
         //成分ごとに正負反転した色を返す
-        inverse(): Rgb {
-            return new Rgb(-this.r, -this.g, -this.b);
+        invert(): Rgb {
+            this.r *= -1;
+            this.g *= -1;
+            this.b *= -1;
+            return this;
         }
         //等色かどうかを返す
         is(rgb: Rgb): boolean {
@@ -50,13 +55,15 @@ module Core {
 
     //点
     export class Point {
+        public static None = new Point();
         //座標で初期化
         constructor(public x: number = -1, public y: number = -1) {
         }
         //座標を成分ごとに加算する
-        add(point: Point) {
+        add(point: Point): Point {
             this.x += point.x;
             this.y += point.y;
+            return this;
         }
         //座標を成分ごとに加算した点を返す
         added(point: Point): Point {
@@ -70,25 +77,27 @@ module Core {
             return this.x * vector.x + this.y * vector.y;
         }
         //成分ごとに正負反転した点を返す
-        inverse(): Point {
+        inverted(): Point {
             return new Point(-this.x, -this.y);
         }
         //等しいかどうかを返す
         is(point: Point): boolean {
             return this.x == point.x && this.y == point.y;
         }
-        mul(scale: number): Point {
+        multiply(scale: number): Point {
+            this.x *= scale;
+            this.y *= scale;
+            return this;
+        }
+        multiplied(scale: number): Point {
             return new Point(this.x * scale, this.y * scale);
         }
         //点との距離を返す
-        norm(point?: Point): number {
-            return Math.sqrt(
-                Math.pow(this.x - (point ? point.x : 0), 2)
-                + Math.pow(this.y - (point ? point.y : 0), 2)
-                );
+        norm(point: Point = new Point(0,0)): number {
+            return Math.sqrt(Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2));
         }
-        normalized(): Point {
-            return this.mul(1 / this.norm());
+        normalize(): Point {
+            return this.multiply(1 / this.norm());
         }
         toString(): string {
             return "(" + this.x + ", " + this.y + ")";
@@ -97,19 +106,19 @@ module Core {
 
     //セグメント
     export class Segment {
-        public label: Label = new Label(-1);
+        public label: Label = new Label();
         //始点と終点で初期化
         constructor(public start: Point = new Point(), public end: Point = new Point()) {
         }
         //重心を返す
         center(): Point {
-            return this.start.added(this.end);
+            return this.start.added(this.end).multiply(0.5);
         }
         direction(): Point {
-            return this.end.added(this.start.inverse()).normalized();
+            return this.end.added(this.start.inverted()).normalize();
         }
         labeled(): boolean {
-            return this.label.is(new Label(-1));
+            return !this.label.is(Label.None);
         }
         toString(): string {
             return "[ " + this.start.toString() + " ~ " + this.end.toString() + ": " + this.label.toNumber() + " ]";
@@ -184,9 +193,9 @@ module Core {
 
         //複製を返す
         clone(): Mat {
-            var newData: number[] = new Array
+            var newData: number[] = [];
             for (var i = 0; i < this.data.length; i++)
-                newData[i] = this.data[i];
+                newData.push(this.data[i]);
             return new Mat(this.width, this.height, newData);
         }
 
@@ -198,18 +207,12 @@ module Core {
         forPixels(arg1: any, arg2?: any) {
             if (arg1 instanceof Mat) {
                 //画素を走査して処理する
-                for (var y = 0; y < this.height; y++) {
-                    for (var x = 0; x < this.width; x++) {
-                        arg1.at(new Point(x, y), arg2(new Point(x, y), this.at(new Point(x, y))));
-                    }
-                }
+                for (var index = 0; index < this.data.length; index++) 
+                    arg1.at(index, arg2(index, this.at(index)));
             } else {
                 //画素を走査して処理する
-                for (var y = 0; y < this.height; y++) {
-                    for (var x = 0; x < this.width; x++) {
-                        arg1(new Point(x, y), this.at(new Point(x, y)));
-                    }
-                }
+                for (var index = 0; index < this.data.length; index++)
+                    arg1(index, this.at(index));
             }
         }
 
