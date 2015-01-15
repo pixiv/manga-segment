@@ -14,7 +14,7 @@ module Labeler {
         default_energy: number = 0.0001;
         ramda: number = 4; // デ－タ項と平滑化項の係数
         feature_on: boolean[] = [true, true]; // 特徴量が有効かどうか
-        sigma_smooth: number[] = [1.0, 0.1]; // 平滑化項の調整のための分散
+        sigma_smooth: number[] = [10, 0.1]; // 平滑化項の調整のための分散
         sigma_data: number[] = [90, 0.3]; // データ項の調整のための分散
         max_prox: number; // セグメント間で許容される最大距離
     }
@@ -26,13 +26,14 @@ module Labeler {
 
         setNearest(offset: number): void {
             this.target.forEach((targetSegment) => {
-                var minNorm: number = -1;
+                var minNorm: number = Infinity;
                 var nearestSeed: Segment;
                 this.seeds.forEach((seed) => {
                     seed.forEach((seedSegment) => {
-                        if (minNorm < 0 || targetSegment.center().norm(seedSegment.center()) < minNorm) {
+                        var currentNorm = targetSegment.center().norm(seedSegment.center());
+                        if (currentNorm < minNorm) {
                             nearestSeed = seedSegment;
-                            minNorm = targetSegment.center().norm(seedSegment.center());
+                            minNorm = currentNorm;
                         }
                     });
                 });
@@ -97,10 +98,10 @@ module Labeler {
                             this.capacity[this.SOURCE][this.SINK] = 0;
                             var optimizer = new Optimizer.EdmondsKarp(this.edges, this.capacity);
                             var label = new Label(id);
-                            for (var node in optimizer.minCut(this.SOURCE, this.SINK)) {
+                            optimizer.minCut(this.SOURCE, this.SINK).forEach((node) => {
                                 if (node < this.target.length)
                                     this.target[node].setLabel(label);
-                            }
+                            });
                         }
                         // Assign 0 to unlabeled segments
                         var label = new Label(0);
@@ -109,7 +110,6 @@ module Labeler {
                                 this.target[k].setLabel(label);
                         }
                     }
-                    this.capacity = optimizer.flow;
             }
         }
 
@@ -146,9 +146,9 @@ module Labeler {
                     //if (value < Math.pow(10, -10))
                     //    value = 0;
                 });
-                if (value / this.parameters.default_energy < Math.pow(10, -20))
+                if (value / this.parameters.default_energy < 1)
                     return 0;
-                return value / this.parameters.default_energy;
+                return Math.round(value / this.parameters.default_energy);
             }
         }
 
@@ -162,7 +162,7 @@ module Labeler {
                 });
                 max_affinity = Math.max(max_affinity, affinity);
             });
-            return this.parameters.ramda * max_affinity / this.parameters.default_energy;
+            return Math.round(this.parameters.ramda * max_affinity / this.parameters.default_energy);
         }
 
         private join(source: Segments[], excludedIndex: number): Segments {

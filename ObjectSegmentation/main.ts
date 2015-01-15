@@ -18,20 +18,21 @@ function extend(target: any, source: any) {
 }
 
 $(window).on("load", () => {
-    var source: Mat;
+    var source: Mat<Rgb>;
+    var directionMap: Mat<Rgb>;
     var scribbles: Array<Segments> = new Array<Array<Segment>>();
     var stroke: Segments = new Array<Segment>();
-    $.getJSON("images/x_bin.js", (json) => {
-        stroke.length = 0;
-        for (var member in json) {
-            stroke.push(new Segment());
-            extend(stroke[stroke.length - 1], json[member]);
-        }
-    })
-        .done(() => {
-            $("#stroke_text").text(JSON.stringify(stroke));
-            visualizer.update();
-        });
+    //$.getJSON("images/x_bin.js", (json) => {
+    //    stroke.length = 0;
+    //    for (var member in json) {
+    //        stroke.push(new Segment());
+    //        extend(stroke[stroke.length - 1], json[member]);
+    //    }
+    //})
+    //    .done(() => {
+    //        $("#stroke_text").text(JSON.stringify(stroke));
+    //        visualizer.update();
+    //    });
     //$.getJSON("images/x_input.js", (json) => {
     //    colors.length = 0;
     //    scribbles.length = 0;
@@ -79,15 +80,15 @@ $(window).on("load", () => {
     $("#" + scribbler.color, $("#palettes")).toggleClass("selected");
 
     var image: HTMLImageElement = new Image();
-    image.src = "images/x_bin.png";
+    image.src = "images/x.png";
     $(image).on("load", () => {
         this.canvas.width = image.width;
         this.canvas.height = image.height;
         this.canvas.getContext('2d').drawImage(image, 0, 0);
         var imageData: ImageData = this.canvas.getContext('2d').getImageData(0, 0, this.canvas.width, this.canvas.height);
-        source = new Mat(imageData);
+        source = new Mat<Rgb>(imageData);
         visualizer.mat_layer.object = source;
-        visualizer.mat_layer.visible = false;
+        visualizer.mat_layer.visible = true;
         visualizer.update();
 
         //var edges: number[][] = [[1, 2], [2, 3], [4], [4, 5], [5], []];
@@ -109,7 +110,7 @@ $(window).on("load", () => {
                 visualizer.draw(scribbler.move(Gui.convert(e)));
         },
         "mousedown": (e: JQueryEventObject) => scribbler.start(Gui.convert(e)),
-        "mouseup": () => {
+        "mouseup mouseleave": () => {
             scribbler.end();
             $("#scribble_text").text(JSON.stringify(scribbles));
         }
@@ -148,7 +149,8 @@ $(window).on("load", () => {
 
     $("#thinning").on("click", () => {
         Processor.invert(source, source);
-        Processor.thinning(source, source);
+        directionMap = new Mat<Rgb>(source.width, source.height, Rgb.black);
+        Processor.thinning(source, source, directionMap);
         Processor.invert(source, source);
         visualizer.update();
         //$("#source_text").text(source.toString());
@@ -170,7 +172,14 @@ $(window).on("load", () => {
         }
         $("#label_text").text(JSON.stringify(n));
         $("#stroke_text").text(JSON.stringify(stroke));
-        $("#optimization_text").text(JSON.stringify(smartScribble.capacity));
+        for (var j in smartScribble.capacity) {
+            var newTr = $("<tr></tr>");
+            for (var k in smartScribble.capacity[j]) {
+                newTr.append('<td>' + smartScribble.capacity[j][k] + '</td>');
+            }
+            $('table#optimization_text').append(newTr);
+        }
+        //$("#optimization_text").text(JSON.stringify(smartScribble.capacity));
     });
 
     $("#save").on("click", () => visualizer.download());

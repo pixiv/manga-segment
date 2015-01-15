@@ -56,7 +56,7 @@ module Gui {
     }
 
     export class Visualizer {
-        mat_layer: Layer<Mat> = new Layer<Mat>();
+        mat_layer: Layer<Mat<Rgb>> = new Layer<Mat<Rgb>>();
         scribbles_layer: Layer<Array<Segments>> = new Layer<Array<Segments>>();
         stroke_layer: Layer<Segments> = new Layer<Segments>();
         usingColors: string[];
@@ -70,8 +70,8 @@ module Gui {
             this.draw(this.stroke_layer);
         }
 
-        draw(mat_layer: Layer<Mat>): void;
-        draw(mat: Mat): void;
+        draw(mat_layer: Layer<Mat<Rgb>>): void;
+        draw(mat: Mat<Rgb>): void;
         draw(segments: Layer<Array<Segments>>): void;
         draw(segments: Layer<Segments>): void;
         draw(segments: Segments): void;
@@ -88,7 +88,7 @@ module Gui {
                     this.draw(arg.object);
                 }
             } else if (arg instanceof Mat) {
-                var mat: Mat = arg;
+                var mat: Mat<Rgb> = arg;
                 this.canvas.width = mat.width;
                 this.canvas.height = mat.height;
                 var imageData: ImageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);

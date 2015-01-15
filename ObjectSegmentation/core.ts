@@ -93,7 +93,7 @@ module Core {
             return new Point(this.x * scale, this.y * scale);
         }
         //点との距離を返す
-        norm(point: Point = new Point(0,0)): number {
+        norm(point: Point = new Point(0, 0)): number {
             return Math.sqrt(Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2));
         }
         normalize(): Point {
@@ -131,17 +131,18 @@ module Core {
     export interface Segments extends Array<Segment> { };
 
     //画像
-    export class Mat implements ImageData {
+    export class Mat<T> {
+        protected dummy: T;
         //横縦の長さ
         public width: number;
         public height: number;
         //画素の値
-        public data: number[];
+        public data: Uint8Array;
 
         constructor();
         //縦横と画素値で初期化
         constructor(width: number, height: number, data: number[]);
-        constructor(width: number, height: number, value: Rgb);
+        constructor(width: number, height: number, value: T);
         //ImageDataからのキャスト
         constructor(imageData: ImageData);
         //オーバーロードのためのダミー
@@ -153,30 +154,30 @@ module Core {
                 this.width = arg1.width;
                 this.height = arg1.height;
                 this.data = arg1.data;
-            } else if (arg3 instanceof Rgb) {
-                this.width = arg1;
-                this.height = arg2;
-                this.data = new Array<number>(this.width * this.height * 4);
-                this.forPixels((pont: Point, rgb: Rgb) => {
-                    rgb = arg3;
-                });
-            } else {
+            } else if (arg3 instanceof Array) {
                 this.width = arg1;
                 this.height = arg2;
                 this.data = arg3;
+            } else {
+                this.width = arg1;
+                this.height = arg2;
+                this.data = new Uint8Array(this.width * this.height * 4);
+                this.forPixels((rgb: T) => {
+                    rgb = arg3;
+                });
             }
         }
 
         //点に対応する画素値を返す
-        at(point: Point): Rgb;
+        at(point: Point): T;
         //点に画素値を設定する
-        at(point: Point, value: Rgb): void;
+        at(point: Point, value: T): void;
         //インデックスに対応する画素値を返す
-        at(index: number): Rgb;
+        at(index: number): T;
         //インデックスに画素値を設定する
-        at(index: number, value: Rgb): void;
+        at(index: number, value: T): void;
         //オーバーロードのためのダミー
-        at(arg1: any, arg2?: any): Rgb {
+        at(arg1: any, arg2?: any): any {
             //点ならインデックスに変換する
             var index: number = (arg1 instanceof Point) ? this.point2Index(arg1) : arg1;
             if (arg2 instanceof Rgb) {
@@ -187,33 +188,60 @@ module Core {
                 this.data[index * 4 + 3] = 255;
             } else {
                 //画素値を返す
+                //if (this.dummy instanceof Rgb)
                 return new Rgb(this.data[index * 4], this.data[index * 4 + 1], this.data[index * 4 + 2]);
+                //else
+                //    return this.data[index];
             }
         }
 
         //複製を返す
-        clone(): Mat {
+        clone(): Mat<T> {
             var newData: number[] = [];
             for (var i = 0; i < this.data.length; i++)
                 newData.push(this.data[i]);
-            return new Mat(this.width, this.height, newData);
+            return new Mat<T>(this.width, this.height, newData);
         }
 
         //画素を走査して処理する
-        forPixels(output: Mat, handler: (point: Point, value: Rgb) => Rgb): void;
+        forPixels(output: Mat<T>, handler: (value: T) => T): void;
         //画素を走査して処理する
-        forPixels(handler: (point: Point, value: Rgb) => void): void;
+        forPixels(handler: (value: T) => void): void;
         //オーバーロードのためのダミー
         forPixels(arg1: any, arg2?: any) {
             if (arg1 instanceof Mat) {
                 //画素を走査して処理する
-                for (var index = 0; index < this.data.length; index++) 
-                    arg1.at(index, arg2(index, this.at(index)));
+                for (var index = 0; index < this.data.length; index++)
+                    arg1.at(index, arg2(this.at(index)));
             } else {
                 //画素を走査して処理する
                 for (var index = 0; index < this.data.length; index++)
-                    arg1(index, this.at(index));
+                    arg1(this.at(index));
             }
+        }
+
+        //画素を走査して処理する
+        forPixelsWithPoint(output: Mat<T>, handler: (point: Point, value: T) => T): void;
+        //画素を走査して処理する
+        forPixelsWithPoint(handler: (point: Point, value: T) => void): void;
+        //オーバーロードのためのダミー
+        forPixelsWithPoint(arg1: any, arg2?: any) {
+            if (arg1 instanceof Mat) {
+                //画素を走査して処理する
+                for (var index = 0; index < this.data.length; index++)
+                    arg1.at(index, arg2(this.index2Point(index), this.at(index)));
+            } else {
+                //画素を走査して処理する
+                for (var index = 0; index < this.data.length; index++)
+                    arg1(this.index2Point(index), this.at(index));
+            }
+        }
+
+        //画素を走査して処理する
+        forInnerPixels(handler: (index: number) => void): void {
+            for (var index = this.width; index < this.data.length - this.width; index++)
+                if (0 < index % this.width && index % this.width < this.width - 1)
+                    handler(index);
         }
 
         //点が画像の内側かどうかを返す

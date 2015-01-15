@@ -31,7 +31,7 @@ module Optimizer {
         }
 
         // Finds nodes in the side of source
-        private findPositiveNodes(source: number, result: number[]) {
+        findPositiveNodes(source: number, result: number[]) {
             result.push(source);
             for (var index in this.capacity[source]) {
                 if (this.flow[source][index] < this.capacity[source][index] && result.indexOf(index) < 0) {
