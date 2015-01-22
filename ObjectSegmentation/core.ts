@@ -22,14 +22,42 @@ module Core {
         //色定数
         public static white = new Rgb(255, 255, 255);
         public static black = new Rgb(0, 0, 0);
+        public r: number;
+        public g: number;
+        public b: number;
+
         //RGB値で初期化
-        constructor(public r: number, public g: number, public b: number) {
+        constructor(colorName: string);
+        constructor(r: number, g: number, b: number);
+        constructor(arg1: any, arg2?: any, arg3?: any) {
+            if (typeof arg1 == 'string') {
+                switch (arg1) {
+                    case 'red': this.r = 255; this.g = 0; this.b = 0; break;
+                    case 'blue': this.r = 0; this.g = 0; this.b = 255; break;
+                    case 'green': this.r = 0; this.g = 255; this.b = 0; break;
+                    case 'yellow': this.r = 0; this.g = 255; this.b = 255; break;
+                    case 'orange': this.r = 255; this.g = 128; this.b = 0; break;
+                    case 'purple': this.r = 255; this.g = 128; this.b = 255; break;
+                    default: this.r = 0; this.g = 0; this.b = 0; break;
+                }
+            } else {
+                this.r = arg1;
+                this.g = arg2;
+                this.b = arg3;
+            }
         }
         //色を成分ごとに加算する
         add(color: Rgb): Rgb {
             this.r += color.r;
             this.g += color.g;
             this.b += color.b;
+            return this;
+        }
+        //色を成分ごとに減算する
+        sub(color: Rgb): Rgb {
+            this.r -= color.r;
+            this.g -= color.g;
+            this.b -= color.b;
             return this;
         }
         //色を成分ごとに加算した色を返す
@@ -39,13 +67,6 @@ module Core {
         //色を成分ごとに乗算する
         multiplied(num: number): Rgb {
             return new Rgb(this.r * num, this.g * num, this.b * num);
-        }
-        //成分ごとに正負反転した色を返す
-        invert(): Rgb {
-            this.r *= -1;
-            this.g *= -1;
-            this.b *= -1;
-            return this;
         }
         //等色かどうかを返す
         is(rgb: Rgb): boolean {
@@ -162,8 +183,8 @@ module Core {
                 this.width = arg1;
                 this.height = arg2;
                 this.data = new Uint8Array(this.width * this.height * 4);
-                this.forPixels((rgb: T) => {
-                    rgb = arg3;
+                this.forPixels(this, (rgb: T) => {
+                    return arg3;
                 });
             }
         }
@@ -201,6 +222,14 @@ module Core {
             for (var i = 0; i < this.data.length; i++)
                 newData.push(this.data[i]);
             return new Mat<T>(this.width, this.height, newData);
+        }
+
+        draw(segment: Segment, value: T): void {
+            var direction = segment.end.added(segment.start.inverted());
+            direction.multiply(1/(direction.x == 0 ? direction.y == 0 ? 1 : Math.abs(direction.y) : Math.abs(direction.x)));
+            for (var p: Point = segment.start.clone(); !p.is(segment.end); p.add(direction)) {
+                this.at(p, value);
+            }
         }
 
         //画素を走査して処理する

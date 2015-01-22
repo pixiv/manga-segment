@@ -59,9 +59,39 @@ module Gui {
         mat_layer: Layer<Mat<Rgb>> = new Layer<Mat<Rgb>>();
         scribbles_layer: Layer<Array<Segments>> = new Layer<Array<Segments>>();
         stroke_layer: Layer<Segments> = new Layer<Segments>();
+        direction_map_layer: Layer<Mat<Rgb>> = new Layer<Mat<Rgb>>();
         usingColors: string[];
         protected canvas: HTMLCanvasElement;
         protected context: CanvasRenderingContext2D;
+
+        restore(): void {
+            if (this.direction_map_layer.visible) {
+                //this.mat_layer.object.forPixels(this.mat_layer.object, (value) => Rgb.white);
+                //this.stroke_layer.object.forEach((segment) => {
+                //    ??
+                //});
+                var mat: Mat<Rgb> = new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white);
+                this.stroke_layer.object.forEach((segment) => mat.draw(segment, new Rgb(this.usingColors[segment.label.toNumber()])));
+                var imageData: ImageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                //var mat: Mat<Rgb> = new Mat<Rgb>(imageData);
+                Processor.restore(mat, this.direction_map_layer.object);
+                //this.direction_map_layer.object.forPixelsWithPoint(mat, (point, rgb) => {
+                //    switch (rgb.r) {
+                //        case 0: return new Rgb(0, 0, 255);
+                //        case 1: return new Rgb(0, 255, 255);
+                //        case 2: return new Rgb(0, 255, 0);
+                //        case 3: return new Rgb(255, 255, 0);
+                //        case 4: return new Rgb(255, 0, 0);
+                //        case 5: return new Rgb(255, 0, 255);
+                //        case 6: return new Rgb(128, 0, 255);
+                //        case 7: return new Rgb(255, 0, 128);
+                //        default: mat.at(point);
+                //    }
+                //});
+                mat.copyTo(imageData);
+                this.context.putImageData(imageData, 0, 0);
+            }
+        }
 
         update(): void {
             this.draw(new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white));
@@ -99,10 +129,14 @@ module Gui {
                 var segment: Segment = arg;
                 if (segment) {
                     this.context.strokeStyle = (segment.label.toNumber() < 0) ? 'black' : this.usingColors[segment.label.toNumber()];
-                    this.context.lineWidth = 3;
+                    this.context.lineWidth = 1;
+                    //this.context.globalAlpha = 1.0;
+                    //this.context.lineCap = 'square';
+                    //this.context.fillRect(segment.start.x, segment.start.y, 1, 1);
+                    //this.context.translate(segment.end.x - segment.start.x, segment.end.y - segment.start.y);
                     this.context.beginPath();
-                    this.context.moveTo(segment.start.x, segment.start.y);
-                    this.context.lineTo(segment.end.x, segment.end.y);
+                    this.context.moveTo(segment.start.x + 0.5, segment.start.y + 0.5);
+                    this.context.lineTo(segment.end.x + 0.5, segment.end.y + 0.5);
                     this.context.stroke();
                     this.context.closePath();
                 }
@@ -112,6 +146,7 @@ module Gui {
         setCanvas(element: HTMLCanvasElement): void {
             this.canvas = element;
             this.context = element.getContext("2d");
+            //this.context.translate(0.5, 0.5);
         }
 
         download(): void {

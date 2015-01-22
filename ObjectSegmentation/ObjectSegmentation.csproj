@@ -18,6 +18,7 @@
     <IISExpressUseClassicPipelineMode />
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="images\o.png" />
     <Content Include="images\x.bmp" />
     <Content Include="images\x.png" />
     <Content Include="index.css" />

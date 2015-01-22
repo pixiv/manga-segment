@@ -33,15 +33,15 @@ module Core {
         static extractEdge(input: Mat<Rgb>, output: Mat<Rgb>) {
             input.forPixelsWithPoint(output, (point: Point, value: Rgb): Rgb => {
                 return new Rgb(127, 127, 127)
-                    .add(input.at(point.added(new Point(-1, -1))).invert())
-                    .add(input.at(point.added(new Point(0, -1))).invert())
-                    .add(input.at(point.added(new Point(+1, -1))).invert())
-                    .add(input.at(point.added(new Point(-1, 0))).invert())
-                    .add(value.multiplied(8))
-                    .add(input.at(point.added(new Point(+1, 0))).invert())
-                    .add(input.at(point.added(new Point(-1, +1))).invert())
-                    .add(input.at(point.added(new Point(0, +1))).invert())
-                    .add(input.at(point.added(new Point(+1, +1))).invert())
+                    .sub(input.at(point.added(new Point(-1, -1))))
+                    .sub(input.at(point.added(new Point(0, -1))))
+                    .sub(input.at(point.added(new Point(+1, -1))))
+                    .sub(input.at(point.added(new Point(-1, 0))))
+                    .sub(value.multiplied(8))
+                    .sub(input.at(point.added(new Point(+1, 0))))
+                    .sub(input.at(point.added(new Point(-1, +1))))
+                    .sub(input.at(point.added(new Point(0, +1))))
+                    .sub(input.at(point.added(new Point(+1, +1))))
             });
         }
 
@@ -50,7 +50,9 @@ module Core {
             var w = input.width;
             var h = input.height;
             var outputData = output.data;
+            var directionData = directionMap.data;
             input.forPixels(output, value => value);
+            input.forPixels(directionMap, value => Rgb.white);
             var rAry: boolean[] = [];
             var bFlag = true;
 
@@ -59,37 +61,92 @@ module Core {
                 for (var i: number = 0; i < outputData.length / 4; i++)
                     rAry[i] = outputData[i * 4] == 0;
                 output.forInnerPixels((index) => {
-                    if (rAry[index])
+                    if (!rAry[index])
                         return;
-                    // [p9 p2 p[1]]
-                    // [p8 p1 p[2]]
+                    // [p[7] p[0] p[1]]
+                    // [p[6] p[@] p[2]]
                     // [p[5] p[4] p[3]]
                     var p: boolean[] = [];
-                    p[0] = !rAry[index - w];
-                    p[1] = !rAry[index - w + 1];
-                    p[2] = !rAry[index + 1];
-                    p[3] = !rAry[index + w + 1];
-                    p[4] = !rAry[index + w];
-                    p[5] = !rAry[index + w - 1];
-                    p[6] = !rAry[index - 1];
-                    p[7] = !rAry[index - w - 1];
+                    p[0] = rAry[index - w];
+                    p[1] = rAry[index - w + 1];
+                    p[2] = rAry[index + 1];
+                    p[3] = rAry[index + w + 1];
+                    p[4] = rAry[index + w];
+                    p[5] = rAry[index + w - 1];
+                    p[6] = rAry[index - 1];
+                    p[7] = rAry[index - w - 1];
                     var a = 0;
                     for (var i = 0; i < 8; i++)
                         if (!p[i] && p[i + 1 < 8 ? i + 1 : 0])
                             a++;
                     var b = 0;
                     for (var i = 0; i < 8; i++)
-                        b += p[i] ? 1 : 0;
+                        if (p[i])
+                            b += 1;
                     if (a == 1 && 2 <= b && b <= 6) {
                         if ((!(k & 1) && !(p[0] && p[2] && p[4]) && !(p[2] && p[4] && p[6]))
                             || ((k & 1) && !(p[0] && p[2] && p[6]) && !(p[0] && p[4] && p[6]))) {
-                            outputData[index * 4] = outputData[index * 4 + 1] = outputData[index * 4 + 2] = 0;
+                            outputData[index * 4] = outputData[index * 4 + 1] = outputData[index * 4 + 2] = 255;
                             bFlag = true;
                         }
                     }
                 });
+                for (var i: number = 0; i < outputData.length / 4; i++) {
+                    if (rAry[i] == (outputData[i * 4] != 0)) {
+                        var p: boolean[] = [];
+                        p[0] = outputData[(i - w) * 4] == 0;
+                        p[1] = outputData[(i - w + 1) * 4] == 0;
+                        p[2] = outputData[(i + 1) * 4] == 0;
+                        p[3] = outputData[(i + w + 1) * 4] == 0;
+                        p[4] = outputData[(i + w) * 4] == 0;
+                        p[5] = outputData[(i + w - 1) * 4] == 0;
+                        p[6] = outputData[(i - 1) * 4] == 0;
+                        p[7] = outputData[(i - w - 1) * 4] == 0;
+                        var q: number;
+                        for (var j = 0; j < 8; j++)
+                            if (p[j])
+                                q = j;
+                        directionData[i * 4] = directionData[i * 4 + 1] = directionData[i * 4 + 2] = q;
+                    }
+                }
             }
         }
+
+        static restore(source: Mat<Rgb>, directionMap: Mat<Rgb>) {
+            directionMap.forPixelsWithPoint((point, direction) => {
+                if (direction.r < 8 && source.at(point).is(Rgb.white)) {
+                    var p = point.clone();
+                    var toColor = Rgb.white;
+                    while (toColor.is(Rgb.white)) {
+                        var d = directionMap.at(p).r;
+                        p.add(this.direction2point(d));
+                        toColor = source.at(p);
+                        if (!toColor.is(Rgb.white)) {
+                            var p2 = point.clone();
+                            while (source.at(p2).is(Rgb.white)) {
+                                source.at(p2, toColor);
+                                p2.add(this.direction2point(directionMap.at(p2).r));
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        protected static direction2point(direction: number): Point {
+            switch (direction) {
+                case 0: return new Point(0, -1);
+                case 1: return new Point(1, -1);
+                case 2: return new Point(1, 0);
+                case 3: return new Point(1, 1);
+                case 4: return new Point(0, 1);
+                case 5: return new Point(-1, 1);
+                case 6: return new Point(-1, 0);
+                case 7: return new Point(-1, -1);
+                default: alert('Err!');
+            }
+        }
+
 
         // Vectorize input
         static vectorize(mat: Mat<Rgb>, segments: Array<Segment>) {
@@ -107,7 +164,7 @@ module Core {
                             if (!remaining.isInside(end))
                                 break;
                         }
-                        end.add(direction.inverted());
+                        //end.add(direction.inverted()); //To prevent no-labeled pixels in thinning
                         if (!start.is(end)) {
                             segments.push(new Segment(start, end));
                         }
