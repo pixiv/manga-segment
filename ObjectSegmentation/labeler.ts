@@ -25,7 +25,8 @@ module Labeler {
         }
 
         setNearest(offset: number): void {
-            this.target.forEach((targetSegment) => {
+            for (var i = 0; i < this.target.length; i++) {
+                var targetSegment = this.target[i];
                 var minNorm: number = Infinity;
                 var nearestSeed: Segment;
                 this.seeds.forEach((seed) => {
@@ -39,7 +40,7 @@ module Labeler {
                 });
                 if (minNorm < offset)
                     targetSegment.setLabel(nearestSeed.label);
-            });
+            }
         }
     }
 
@@ -143,8 +144,6 @@ module Labeler {
                 Features.forEach((feature) => {
                     if (this.parameters.feature_on[feature])
                         value *= this.fall_off(this.value(feature, s1, s2), feature, false);
-                    //if (value < Math.pow(10, -10))
-                    //    value = 0;
                 });
                 if (value / this.parameters.default_energy < 1)
                     return 0;

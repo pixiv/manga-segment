@@ -17,34 +17,27 @@ module Core {
         }
     }
 
+    class Color<T> {
+        constructor(public r: T, public g: T, public b: T) {
+        }
+    }
+
     //RGB色
-    export class Rgb {
+    export class Rgb extends Color<number> {
         //色定数
         public static white = new Rgb(255, 255, 255);
         public static black = new Rgb(0, 0, 0);
-        public r: number;
-        public g: number;
-        public b: number;
+        public static red = new Rgb(255, 0, 0);
+        public static blue = new Rgb(0, 0, 255);
+        public static green = new Rgb(0, 255, 0);
+        public static yellow = new Rgb(0, 0, 255);
+        public static orange = new Rgb(255, 128, 0);
+        public static purple = new Rgb(255, 128, 255);
+        public static standards = ['red', 'blue', 'green', 'yellow', 'orange', 'purple'];
 
         //RGB値で初期化
-        constructor(colorName: string);
-        constructor(r: number, g: number, b: number);
-        constructor(arg1: any, arg2?: any, arg3?: any) {
-            if (typeof arg1 == 'string') {
-                switch (arg1) {
-                    case 'red': this.r = 255; this.g = 0; this.b = 0; break;
-                    case 'blue': this.r = 0; this.g = 0; this.b = 255; break;
-                    case 'green': this.r = 0; this.g = 255; this.b = 0; break;
-                    case 'yellow': this.r = 0; this.g = 255; this.b = 255; break;
-                    case 'orange': this.r = 255; this.g = 128; this.b = 0; break;
-                    case 'purple': this.r = 255; this.g = 128; this.b = 255; break;
-                    default: this.r = 0; this.g = 0; this.b = 0; break;
-                }
-            } else {
-                this.r = arg1;
-                this.g = arg2;
-                this.b = arg3;
-            }
+        constructor(r: number, g: number, b: number) {
+            super(r, g, b);
         }
         //色を成分ごとに加算する
         add(color: Rgb): Rgb {
@@ -71,6 +64,16 @@ module Core {
         //等色かどうかを返す
         is(rgb: Rgb): boolean {
             return this.r == rgb.r && this.g == rgb.g && this.b == rgb.b;
+        }
+        static fromString(name: string): Rgb {
+            switch (name) {
+                case 'red': return Rgb.red; break;
+                case 'blue': return Rgb.blue; break;
+                case 'green': return Rgb.green; break;
+                case 'yellow': return Rgb.yellow; break;
+                case 'orange': return Rgb.orange; break;
+                case 'purple': return Rgb.purple; break;
+            }
         }
     }
 
@@ -226,25 +229,31 @@ module Core {
 
         draw(segment: Segment, value: T): void {
             var direction = segment.end.added(segment.start.inverted());
-            direction.multiply(1/(direction.x == 0 ? direction.y == 0 ? 1 : Math.abs(direction.y) : Math.abs(direction.x)));
+            direction.multiply(1 / (direction.x == 0 ? direction.y == 0 ? 1 : Math.abs(direction.y) : Math.abs(direction.x)));
             for (var p: Point = segment.start.clone(); !p.is(segment.end); p.add(direction)) {
                 this.at(p, value);
             }
+            this.at(p, value);
         }
 
         //画素を走査して処理する
         forPixels(output: Mat<T>, handler: (value: T) => T): void;
+        forPixels(output: Core.SimpleMat<boolean>, handler: (value: T) => boolean): void;
         //画素を走査して処理する
         forPixels(handler: (value: T) => void): void;
         //オーバーロードのためのダミー
         forPixels(arg1: any, arg2?: any) {
             if (arg1 instanceof Mat) {
                 //画素を走査して処理する
-                for (var index = 0; index < this.data.length; index++)
+                for (var index = 0; index < this.width * this.height; index++)
+                    arg1.at(index, arg2(this.at(index)));
+            } else if (arg1 instanceof Core.SimpleMat) {
+                //画素を走査して処理する
+                for (var index = 0; index < this.width * this.height; index++)
                     arg1.at(index, arg2(this.at(index)));
             } else {
                 //画素を走査して処理する
-                for (var index = 0; index < this.data.length; index++)
+                for (var index = 0; index < this.width * this.height; index++)
                     arg1(this.at(index));
             }
         }
@@ -256,6 +265,147 @@ module Core {
         //オーバーロードのためのダミー
         forPixelsWithPoint(arg1: any, arg2?: any) {
             if (arg1 instanceof Mat) {
+                //画素を走査して処理する
+                for (var index = 0; index < this.width * this.height; index++)
+                    arg1.at(index, arg2(this.index2Point(index), this.at(index)));
+            } else {
+                //画素を走査して処理する
+                for (var index = 0; index < this.width * this.height; index++)
+                    arg1(this.index2Point(index), this.at(index));
+            }
+        }
+
+        //画素を走査して処理する
+        forInnerPixels(handler: (index: number) => void): void {
+            for (var index = this.width; index < this.width * this.height - this.width; index++)
+                if (0 < index % this.width && index % this.width < this.width - 1)
+                    handler(index);
+        }
+
+        //点が画像の内側かどうかを返す
+        isInside(point: Point): boolean {
+            return 0 < point.x && 0 < point.y && point.x < this.width && point.y < this.height;
+        }
+
+        copyFrom(imageData: ImageData): void {
+            for (var i = 0; i < this.data.length; i++)
+                this.data[i] = imageData.data[i];
+        }
+
+        copyTo(imageData: ImageData): void {
+            for (var i = 0; i < this.data.length; i++)
+                imageData.data[i] = this.data[i];
+        }
+
+        toString(): string {
+            var str = "";
+            for (var i = 0; i < this.data.length; i++)
+                str += String(this.data[i]) + ", ";
+            return str;
+        }
+
+        //点をインデックスに変換する
+        private point2Index(point: Point): number {
+            return point.y * this.width + point.x;
+        }
+
+        //インデックスを点に変換する
+        private index2Point(index: number): Point {
+            return new Point(index % this.width, (index - index % this.width) / this.width);
+        }
+
+    }
+
+    //画像
+    export class SimpleMat<T> {
+        //横縦の長さ
+        public width: number;
+        public height: number;
+        //画素の値
+        public data: T[];
+
+        constructor();
+        //縦横と画素値で初期化
+        constructor(width: number, height: number, data: T[]);
+        constructor(width: number, height: number, value: T);
+        //ImageDataからのキャスト
+        constructor(imageData: ImageData);
+        //オーバーロードのためのダミー
+        constructor(arg1?: any, arg2?: number, arg3?: any) {
+            if (!arg1) {
+                this.width = 0;
+                this.height = 0;
+            } else if (arg1 instanceof ImageData) {
+                this.width = arg1.width;
+                this.height = arg1.height;
+                this.data = arg1.data;
+            } else if (arg3 instanceof Array) {
+                this.width = arg1;
+                this.height = arg2;
+                this.data = arg3;
+            } else {
+                this.width = arg1;
+                this.height = arg2;
+                this.data = new Array<T>(this.width * this.height);
+                for (var i = 0; i < this.data.length; i++) {
+                    this.data[i] = arg3;
+                }
+            }
+        }
+
+        //点に対応する画素値を返す
+        at(point: Point): T;
+        //点に画素値を設定する
+        at(point: Point, value: T): void;
+        //インデックスに対応する画素値を返す
+        at(index: number): T;
+        //インデックスに画素値を設定する
+        at(index: number, value: T): void;
+        //オーバーロードのためのダミー
+        at(arg1: any, arg2?: any): any {
+            //点ならインデックスに変換する
+            var index: number = (arg1 instanceof Point) ? this.point2Index(arg1) : arg1;
+            if (arg2 instanceof Rgb) {
+                //画素値を設定する
+                this.data[index] = arg2;
+            } else {
+                //画素値を返す
+                return this.data[index];
+            }
+        }
+
+        //複製を返す
+        clone(): SimpleMat<T> {
+            var newData: T[] = [];
+            for (var i = 0; i < this.data.length; i++)
+                newData.push(this.data[i]);
+            return new SimpleMat<T>(this.width, this.height, newData);
+        }
+
+        //画素を走査して処理する
+        forPixels(output: SimpleMat<T>, handler: (value: T) => T): void;
+        //画素を走査して処理する
+        forPixels(handler: (value: T) => void): void;
+        //オーバーロードのためのダミー
+        forPixels(arg1: any, arg2?: any) {
+            if (arg1 instanceof SimpleMat) {
+                //画素を走査して処理する
+                for (var index = 0; index < this.data.length; index++)
+                    arg1.at(index, arg2(this.at(index)));
+            } else {
+                //画素を走査して処理する
+                for (var index = 0; index < this.data.length; index++)
+                    arg1(this.at(index));
+            }
+        }
+
+        //画素を走査して処理する
+        forPixelsWithPoint(output: SimpleMat<T>, handler: (point: Point, value: T) => T): void;
+        //画素を走査して処理する
+        forPixelsWithPoint(handler: (point: Point, value: T) => void): void;
+        //オーバーロードのためのダミー
+        forPixelsWithPoint(arg1: any, arg2?: any) {
+            if (arg1 instanceof SimpleMat) {
                 //画素を走査して処理する
                 for (var index = 0; index < this.data.length; index++)
                     arg1.at(index, arg2(this.index2Point(index), this.at(index)));
@@ -276,18 +426,6 @@ module Core {
         //点が画像の内側かどうかを返す
         isInside(point: Point): boolean {
             return 0 < point.x && 0 < point.y && point.x < this.width && point.y < this.height;
-        }
-
-        copyTo(imageData: ImageData): void {
-            for (var i = 0; i < this.data.length; i++)
-                imageData.data[i] = this.data[i];
-        }
-
-        toString(): string {
-            var str = "";
-            for (var i = 0; i < this.data.length; i++)
-                str += String(this.data[i]) + ", ";
-            return str;
         }
 
         //点をインデックスに変換する

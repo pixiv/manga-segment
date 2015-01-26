@@ -18,7 +18,9 @@
     <IISExpressUseClassicPipelineMode />
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="images\lovehina01_040_2_bin.png" />
     <Content Include="images\o.png" />
+    <Content Include="images\test_bin.png" />
     <Content Include="images\x.bmp" />
     <Content Include="images\x.png" />
     <Content Include="index.css" />
@@ -54,6 +56,9 @@
   <PropertyGroup>
     <RootNamespace>ObjectSegmentation</RootNamespace>
   </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyName>ObjectSegmentation</AssemblyName>
+  </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\WebApplications\Microsoft.WebApplication.targets" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\WebApplications\Microsoft.WebApplication.targets')" />
   <ProjectExtensions>
@@ -64,7 +69,7 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>58490</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost:58490/</IISUrl>
+          <IISUrl>http://localhost:58492/</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>

@@ -9,102 +9,59 @@ import Processor = Core.Processor;
 import Rgb = Core.Rgb;
 import Label = Core.Label;
 
-function extend(target: any, source: any) {
-    for (var member in source)
-        if (typeof source[member] == "object")
-            extend(target[member], source[member]);
-        else
-            target[member] = source[member];
-}
-
 $(window).on("load", () => {
     var source: Mat<Rgb>;
+    //var binary: Core.SimpleMat<boolean>;
     var directionMap: Mat<Rgb>;
     var scribbles: Array<Segments> = new Array<Array<Segment>>();
     var stroke: Segments = new Array<Segment>();
-    //$.getJSON("images/x_bin.js", (json) => {
-    //    stroke.length = 0;
-    //    for (var member in json) {
-    //        stroke.push(new Segment());
-    //        extend(stroke[stroke.length - 1], json[member]);
-    //    }
-    //})
-    //    .done(() => {
-    //        $("#stroke_text").text(JSON.stringify(stroke));
-    //        visualizer.update();
-    //    });
-    //$.getJSON("images/x_input.js", (json) => {
-    //    colors.length = 0;
-    //    scribbles.length = 0;
-    //    for (var member in json) {
-    //        colors.push(Gui.colors[member]);
-    //        scribbles.push(new Array<Segment>());
-    //        for (var submember in json[member]) {
-    //            var back = scribbles[scribbles.length - 1];
-    //            back.push(new Segment());
-    //            extend(back[back.length - 1], json[member][submember]);
-    //        }
-    //    }
-    //})
-    //    .done(() => {
-    //        $("#scribble_text").text(JSON.stringify(scribbles));
-    //        visualizer.update();
-    //    });
+    var stroke_file: string;
+    var input_file: string;
     var colors: string[] = [];
 
     var scribbler: Gui.Scribbler = new Gui.Scribbler(scribbles, colors);
+    scribbler.createPalettes();
+
     var nearestScribble: Labeler.NearestScribbles = new Labeler.NearestScribbles(scribbles, stroke);
     var smartScribble: Labeler.SmartScribbles = new Labeler.SmartScribbles(scribbles, stroke);
+
     var visualizer = new Gui.Visualizer();
     visualizer.setCanvas(<HTMLCanvasElement> $("#canvas")[0]);
-    visualizer.usingColors = colors;
-    visualizer.mat_layer.visible = false;
-    visualizer.scribbles_layer.object = scribbles;
-    visualizer.scribbles_layer.visible = true;
-    visualizer.stroke_layer.object = stroke;
-    visualizer.stroke_layer.visible = true;
-    visualizer.direction_map_layer.object = directionMap;
-    visualizer.direction_map_layer.visible = true;
-
-    // Create palettes
-    Gui.colors.forEach((color) => {
-        $("#palettes").append(
-            $("<span/>")
-                .attr("id", color)
-                .css("background-color", color)
-                .on("click", (e) => {
-                    $("#" + scribbler.color).toggleClass("selected");
-                    scribbler.setColor(color);
-                    $(e.target).toggleClass("selected");
-                })
-            );
-    });
-    $("#" + scribbler.color, $("#palettes")).toggleClass("selected");
 
     var image: HTMLImageElement = new Image();
-    image.src = "images/o.png";
+    image.src = "images/lovehina01_040_2_bin.png";
     $(image).on("load", () => {
         this.canvas.width = image.width;
         this.canvas.height = image.height;
         this.canvas.getContext('2d').drawImage(image, 0, 0);
         var imageData: ImageData = this.canvas.getContext('2d').getImageData(0, 0, this.canvas.width, this.canvas.height);
         source = new Mat<Rgb>(imageData);
-        visualizer.mat_layer.object = source;
-        visualizer.mat_layer.visible = true;
+        directionMap = new Mat<Rgb>(source.width, source.height, Rgb.black);
+        Processor.binarize(source, source, 200);
+        Processor.thinning(source, source, directionMap);
+        Processor.vectorize(source, stroke);
+        $("#stroke_text").text(JSON.stringify(stroke));
+        visualizer.setObjects(source, scribbles, stroke, directionMap);
+        visualizer.setVisibility();
+        visualizer.colors = colors;
         visualizer.update();
-
-        //var edges: number[][] = [[1, 2], [2, 3], [4], [4, 5], [5], []];
-        //var capacity: number[][] = [
-        //    [0, 3, 3, 0, 0, 0],
-        //    [0, 0, 2, 3, 0, 0],
-        //    [0, 0, 0, 0, 2, 0],
-        //    [0, 0, 0, 0, 4, 2],
-        //    [0, 0, 0, 0, 0, 3],
-        //    [0, 0, 0, 0, 0, 0]
-        //];
-        //var optimizer = new Optimizer.EdmondsKarp(edges, capacity);
-        //var r = optimizer.minCut(0, 5);
     });
+
+    if (stroke_file != undefined) {
+        $.getJSON("images/x_bin.js", (json) => Gui.Loader.json2stroke(stroke, json))
+            .done(() => {
+                $("#stroke_text").text(JSON.stringify(stroke));
+                visualizer.update();
+            });
+    }
+
+    if (input_file != undefined) {
+        $.getJSON("images/x_input.js", (json) => Gui.Loader.json2scribbles(scribbles, colors, json))
+            .done(() => {
+                $("#scribble_text").text(JSON.stringify(scribbles));
+                visualizer.update();
+            });
+    }
 
     $("#main").on({
         "mousemove": (e: JQueryEventObject) => {
@@ -118,29 +75,33 @@ $(window).on("load", () => {
         }
     });
 
-    $("#source").on("click", () => {
-        visualizer.mat_layer.visible = $("#source").prop("checked");
+    $("#visibility_source").on("click", () => {
+        visualizer.setVisibility();
         visualizer.update();
     });
 
-    $("#stroke").on("click", () => {
-        visualizer.stroke_layer.visible = $("#stroke").prop("checked");
+    $("#visibility_scribbles").on("click", () => {
+        visualizer.setVisibility();
         visualizer.update();
     });
 
-    $("#scribble").on("click", () => {
-        visualizer.scribbles_layer.visible = $("#scribble").prop("checked");
+    $("#visibility_stroke").on("click", () => {
+        visualizer.setVisibility();
         visualizer.update();
     });
 
-    $("#vectorize").on("click", () => {
-        Processor.vectorize(source, stroke);
-        //$("#stroke_text").text(JSON.stringify(stroke));
-        //$("#source_text").text(source.toString());
+    $("#visibility_direction_map").on("click", () => {
+        visualizer.setVisibility();
+        visualizer.update();
     });
 
     $("#edge").on("click", () => {
         Processor.extractEdge(source, source);
+        visualizer.update();
+    });
+
+    $("#gray").on("click", () => {
+        Processor.convertToGray(source, source);
         visualizer.update();
     });
 
@@ -150,31 +111,24 @@ $(window).on("load", () => {
     });
 
     $("#thinning").on("click", () => {
-        directionMap = new Mat<Rgb>(source.width, source.height, Rgb.black);
         Processor.thinning(source, source, directionMap);
         visualizer.update();
-        //$("#source_text").text(directionMap.toString());
     });
 
-    $("#gray").on("click", () => {
-        Processor.convertToGray(source, source);
-        visualizer.update();
+    $("#vectorize").on("click", () => {
+        Processor.vectorize(source, stroke);
+        $("#stroke_text").text(JSON.stringify(stroke));
     });
 
     $("#labeling").on("click", () => {
-        //nearestScribble.setNearest(50);
+        //nearestScribble.setNearest(200);
+        alert('1st');
         smartScribble.run();
         visualizer.update();
-        visualizer.direction_map_layer.object = directionMap;
-        visualizer.direction_map_layer.visible = true;
+        alert('2nd');
         visualizer.restore();
-        //$("#source_text").text(source.toString());
-        var n: number[] = [];
-        for (var i = 0; i < stroke.length; i++) {
-            n.push(stroke[i].label.toNumber());
-        }
-        //$("#label_text").text(JSON.stringify(n));
-        //$("#stroke_text").text(JSON.stringify(stroke));
+        $("#label_text").text(JSON.stringify(visualizer.getLabels()));
+        $("#stroke_text").text(JSON.stringify(stroke));
         //for (var j in smartScribble.capacity) {
         //    var newTr = $("<tr></tr>");
         //    for (var k in smartScribble.capacity[j]) {
@@ -182,7 +136,7 @@ $(window).on("load", () => {
         //    }
         //    $('table#optimization_text').append(newTr);
         //}
-        //$("#optimization_text").text(JSON.stringify(smartScribble.capacity));
+        $("#optimization_text").text(JSON.stringify(smartScribble.capacity));
     });
 
     $("#save").on("click", () => visualizer.download());

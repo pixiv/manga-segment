@@ -17,8 +17,15 @@ module Core {
         }
 
         // Binarize input to output using threshold value
-        static binarize(input: Mat<Rgb>, output: Mat<Rgb>, threshold: number) {
-            input.forPixels(output, (value: Rgb) => (value.r < threshold && value.g < threshold && value.b < threshold) ? Rgb.black : Rgb.white);
+        static binarize(input: Mat<Rgb>, output: Core.SimpleMat<boolean>, threshold: number): void;
+        static binarize(input: Mat<Rgb>, output: Mat<Rgb>, threshold: number): void;
+        static binarize(input: Mat<Rgb>, output: any, threshold: number): void {
+            if (output instanceof Mat)
+                input.forPixels(output, (value: Rgb) => (value.r < threshold && value.g < threshold && value.b < threshold) ? Rgb.black : Rgb.white);
+            else
+                input.forPixels(output, (value: Rgb) => {
+                    return value.r < threshold && value.g < threshold && value.b < threshold;
+                });
         }
 
         // Convert input to output as a grayscale
@@ -147,16 +154,15 @@ module Core {
             }
         }
 
-
         // Vectorize input
         static vectorize(mat: Mat<Rgb>, segments: Array<Segment>) {
             var directions: Array<Point> = [new Point(1, 0), new Point(1, 1), new Point(0, 1), new Point(-1, 1)];
-            var remaining: Mat<Rgb> = mat.clone();
-            var end: Point;
+            var remaining = mat.clone();
             remaining.forPixelsWithPoint((start: Point, value: Rgb) => {
                 if (remaining.at(start).is(Rgb.black)) {
+                    var found = false;
                     directions.forEach((direction) => {
-                        end = start.clone();
+                        var end = start.clone();
                         remaining.at(end, Rgb.black);
                         while (remaining.at(end).is(Rgb.black)) {
                             remaining.at(end, Rgb.white);
@@ -164,11 +170,14 @@ module Core {
                             if (!remaining.isInside(end))
                                 break;
                         }
-                        //end.add(direction.inverted()); //To prevent no-labeled pixels in thinning
+                        end.add(direction.inverted());
                         if (!start.is(end)) {
                             segments.push(new Segment(start, end));
+                            found = true;
                         }
                     });
+                    if (!found)
+                        segments.push(new Segment(start, start));
                 }
             });
         }
