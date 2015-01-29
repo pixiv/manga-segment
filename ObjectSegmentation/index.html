@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>Object Segmentation T</title>
+    <title>Object Segmentation</title>
     <link rel="stylesheet" href="index.css" />
     <script src="Scripts/jquery-2.1.1.js"></script>
     <script src="core.js"></script>
@@ -19,21 +19,6 @@
     </div>
 
     <form method="post" action="javascript:void(0);">
-        <fieldset class="processing">
-            <div id="status"></div>
-        </fieldset>
-
-        <!--<fieldset class="processing">
-            <legend>Processes</legend>
-            <button id="edge">Edge</button>
-            <button id="gray">Gray</button>
-            <button id="binarize">Binarize</button>
-            <button id="thinning">Thinning</button>
-            <button id="vectorize">Vectorize</button>
-            <button id="labeling">Labeling</button>
-            <button id="save">Save</button>
-        </fieldset>-->
-
         <fieldset class="displaying">
             <legend>Layers</legend>
             <input type="checkbox" id="visibility_source" checked="checked" /><label for="visibility_source">Source</label>
@@ -42,32 +27,6 @@
             <input type="checkbox" id="visibility_direction_map" /><label for="visibility_direction_map">Direction map</label>
             <input type="checkbox" id="visibility_result" checked="checked" /><label for="visibility_result">Result</label>
         </fieldset>
-
-        <!--<fieldset>
-            <legend>Optimization</legend>
-            <table id="optimization_text"></table>
-        </fieldset>
-
-        <fieldset>
-            <legend>Labels</legend>
-            <sapn id="label_text"></sapn>
-        </fieldset>
-
-        <fieldset>
-            <legend>Stroke</legend>
-            <sapn id="stroke_text"></sapn>
-        </fieldset>
-
-        <fieldset>
-            <legend>Scribble</legend>
-            <sapn id="scribble_text"></sapn>
-        </fieldset>
-
-        <fieldset>
-            <legend>Source</legend>
-            <sapn id="source_text"></sapn>
-        </fieldset>-->
-
     </form>
 
 </body>

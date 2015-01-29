@@ -8,8 +8,6 @@ module Gui {
         return new Point(Math.round(jpoint.clientX), Math.round(jpoint.clientY));
     }
 
-    const colors: string[] = Core.Rgb.standards;
-
     export class Loader {
         static json2stroke(stroke: Segments, json: any) {
             stroke.length = 0;
@@ -44,11 +42,11 @@ module Gui {
     }
 
     export class Scribbler {
-        color: string = colors[0];
+        protected color: string = Core.Rgb.standards[0];
         protected previous: Point = null;
         protected currentLabel: Label = 0;
 
-        constructor(protected scribbles: Array<Segments>, protected usingColors: string[]) {
+        constructor(protected scribbles: Array<Segments>, protected colors: string[]) {
         }
 
         drawing(): boolean {
@@ -64,11 +62,11 @@ module Gui {
         }
 
         start(point: Point): void {
-            if (!this.usingColors || this.usingColors.indexOf(this.color) == -1) {
-                this.usingColors.push(this.color);
+            if (!this.colors || this.colors.indexOf(this.color) == -1) {
+                this.colors.push(this.color);
                 this.scribbles.push([]);
             }
-            this.currentLabel = this.usingColors.indexOf(this.color);
+            this.currentLabel = this.colors.indexOf(this.color);
             this.previous = point;
         }
 
@@ -81,7 +79,7 @@ module Gui {
         }
 
         createPalettes(): void {
-            colors.forEach((color) => {
+            Core.Rgb.standards.forEach((color) => {
                 $("#palettes").append(
                     $("<span/>")
                         .attr("id", color)
@@ -104,17 +102,17 @@ module Gui {
     }
 
     export class Visualizer {
+        colors: string[];
         protected mat_layer: Layer<Mat<Rgb>> = new Layer<Mat<Rgb>>();
         protected scribbles_layer: Layer<Array<Segments>> = new Layer<Array<Segments>>();
         protected stroke_layer: Layer<Segments> = new Layer<Segments>();
         protected direction_map_layer: Layer<Mat<Rgb>> = new Layer<Mat<Rgb>>();
-        colors: string[];
         protected canvas: HTMLCanvasElement;
         protected context: CanvasRenderingContext2D;
 
         restore(): void {
             var mat: Mat<Rgb> = new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white);
-            this.stroke_layer.object.forEach((segment) => mat.draw(segment, Rgb.fromString(this.colors[segment.label])));
+            this.stroke_layer.object.forEach((segment) => mat.draw(segment, Rgb.fromString(this.colors[segment.label()])));
             var imageData: ImageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
             Processor.restore(mat, this.direction_map_layer.object);
             mat.copyTo(imageData);
@@ -139,19 +137,7 @@ module Gui {
             this.draw(new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white));
             if (this.direction_map_layer.visible) {
                 var mat: Mat<Rgb> = new Mat<Rgb>();
-                this.direction_map_layer.object.forPixelsWithPoint(mat, (point, rgb) => {
-                    switch (rgb.r) {
-                        case 0: return new Rgb(0, 0, 255);
-                        case 1: return new Rgb(0, 255, 255);
-                        case 2: return new Rgb(0, 255, 0);
-                        case 3: return new Rgb(255, 255, 0);
-                        case 4: return new Rgb(255, 0, 0);
-                        case 5: return new Rgb(255, 0, 255);
-                        case 6: return new Rgb(128, 0, 255);
-                        case 7: return new Rgb(255, 0, 128);
-                        default: mat.at(point);
-                    }
-                });
+                this.direction_map_layer.object.forPixelsWithPoint(mat,(point, rgb) => Rgb.fromString(Rgb.standards[rgb.r]));
             } else {
                 if (this.mat_layer.visible)
                     this.draw(this.mat_layer.object);
@@ -184,7 +170,7 @@ module Gui {
             else if (arg instanceof Segment) {
                 var segment: Segment = arg;
                 if (segment) {
-                    this.context.strokeStyle = (segment.label < 0) ? 'black' : this.colors[segment.label];
+                    this.context.strokeStyle = (segment.label() < 0) ? 'black' : this.colors[segment.label()];
                     this.context.lineWidth = 1;
                     this.context.beginPath();
                     this.context.moveTo(segment.start.x, segment.start.y);
@@ -205,12 +191,10 @@ module Gui {
             location.href = this.canvas.toDataURL();
         }
 
-        getLabels(): number[] {
-            var n: number[] = [];
-            for (var i = 0; i < this.stroke_layer.object.length; i++) {
-                n.push(this.stroke_layer.object[i].label);
-            }
-            return n;
+        getLabels(): number[]{
+            var labels: number[] = [];
+            this.stroke_layer.object.forEach((segment) => labels.push(segment.label()));
+            return labels;
         }
 
     }

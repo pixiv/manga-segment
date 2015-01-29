@@ -10,10 +10,7 @@ import Rgb = Core.Rgb;
 import Label = Core.Label;
 
 $(window).on("load",() => {
-    $("#status").html($("#status").html() + 'Started<br />');
     var source: Mat<Rgb>;
-    //var binary: Core.SimpleMat<boolean>;
-    var directionMap: Mat<Rgb>;
     var scribbles: Array<Segments> = new Array<Array<Segment>>();
     var stroke: Segments = new Array<Segment>();
     var stroke_file: string;
@@ -29,13 +26,14 @@ $(window).on("load",() => {
 
     var image: HTMLImageElement = new Image();
     image.src = "images/lovehina01_040_2_bin.png";
+
     $(image).on("load",() => {
         this.canvas.width = image.width;
         this.canvas.height = image.height;
         this.canvas.getContext('2d').drawImage(image, 0, 0);
         var imageData: ImageData = this.canvas.getContext('2d').getImageData(0, 0, this.canvas.width, this.canvas.height);
         source = new Mat<Rgb>(imageData);
-        directionMap = new Mat<Rgb>(source.width, source.height, Rgb.black);
+        var directionMap = new Mat<Rgb>(source.width, source.height, Rgb.black);
         var thinned = source.clone();
         Processor.binarize(thinned, thinned, 200);
         Processor.thinning(thinned, thinned, directionMap);
@@ -48,7 +46,7 @@ $(window).on("load",() => {
         $("#status").html($("#status").html() + 'Loaded<br />');
     });
 
-    if (stroke_file != undefined) {
+    if (stroke_file) {
         $.getJSON("images/x_bin.js",(json) => Gui.Loader.json2stroke(stroke, json))
             .done(() => {
             $("#stroke_text").text(JSON.stringify(stroke));
@@ -56,7 +54,7 @@ $(window).on("load",() => {
         });
     }
 
-    if (input_file != undefined) {
+    if (input_file) {
         $.getJSON("images/x_input.js",(json) => Gui.Loader.json2scribbles(scribbles, colors, json))
             .done(() => {
             $("#scribble_text").text(JSON.stringify(scribbles));
@@ -75,17 +73,13 @@ $(window).on("load",() => {
                 scribbler.end();
                 if (!calculating) {
                     calculating = true;
-                    //$("#scribble_text").text(JSON.stringify(scribbles));
                     Labeler.reset(stroke);
                     var nearestScribble: Labeler.NearestScribbles = new Labeler.NearestScribbles(scribbles, stroke);
                     nearestScribble.expandNearest(1000);
-                    $("#status").html($("#status").html() + 'Labeled by Nearest<br />');
-                    var smartScribble: Labeler.SmartScribbles = new Labeler.SmartScribbles(scribbles, nearestScribble.remainingSegments);
+                    var smartScribble: Labeler.SmartScribbles = new Labeler.SmartScribbles(scribbles, nearestScribble.target);
                     smartScribble.run();
                     visualizer.update();
-                    $("#status").html($("#status").html() + 'Labeled by Smart<br />');
                     visualizer.restore();
-                    $("#status").html($("#status").html() + 'restored<br />');
                     calculating = false;
                 }
             }
@@ -111,47 +105,5 @@ $(window).on("load",() => {
         visualizer.setVisibility();
         visualizer.update();
     });
-
-    $("#edge").on("click",() => {
-        Processor.extractEdge(source, source);
-        visualizer.update();
-    });
-
-    $("#gray").on("click",() => {
-        Processor.convertToGray(source, source);
-        visualizer.update();
-    });
-
-    $("#binarize").on("click",() => {
-        Processor.binarize(source, source, 200);
-        visualizer.update();
-    });
-
-    $("#thinning").on("click",() => {
-        Processor.thinning(source, source, directionMap);
-        visualizer.update();
-    });
-
-    $("#vectorize").on("click",() => {
-        Processor.vectorize(source, stroke);
-        $("#stroke_text").text(JSON.stringify(stroke));
-    });
-
-    $("#labeling").on("click",() => {
-        var nearestScribble: Labeler.NearestScribbles = new Labeler.NearestScribbles(scribbles, stroke);
-        nearestScribble.expandNearest(2000);
-        $("#status").html($("#status").html() + 'Labeled by Nearest<br />');
-        var smartScribble: Labeler.SmartScribbles = new Labeler.SmartScribbles(scribbles, nearestScribble.remainingSegments);
-        smartScribble.run();
-        visualizer.update();
-        $("#status").html($("#status").html() + 'Labeled by Smart<br />');
-        visualizer.restore();
-        $("#status").html($("#status").html() + 'restored<br />');
-        //$("#label_text").text(JSON.stringify(visualizer.getLabels()));
-        //$("#stroke_text").text(JSON.stringify(stroke));
-        //$("#optimization_text").text(JSON.stringify(smartScribble.capacity));
-    });
-
-    $("#save").on("click",() => visualizer.download());
 
 });

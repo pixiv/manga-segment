@@ -17,16 +17,15 @@ module Core {
         }
 
         // Binarize input to output using threshold value
-        static binarize(input: Mat<Rgb>, output: Mat<Rgb>, threshold: number): void;
-        static binarize(input: Mat<Rgb>, output: any, threshold: number): void {
+        static binarize(input: Mat<Rgb>, output: Mat<Rgb>, threshold: number): void {
                 input.forPixels(output, (value: Rgb) => (value.r < threshold && value.g < threshold && value.b < threshold) ? Rgb.black : Rgb.white);
         }
 
         // Convert input to output as a grayscale
         static convertToGray(input: Mat<Rgb>, output: Mat<Rgb>) {
             input.forPixels(output, (value: Rgb): Rgb => {
-                var grayValue = value.r * 0.2126 + value.g * 0.7152 + value.b * 0.0722;
-                return new Rgb(grayValue, grayValue, grayValue);
+                var newValue = value.r * 0.2126 + value.g * 0.7152 + value.b * 0.0722;
+                return new Rgb(newValue, newValue, newValue);
             });
         }
 
@@ -34,22 +33,22 @@ module Core {
         static extractEdge(input: Mat<Rgb>, output: Mat<Rgb>) {
             input.forPixelsWithPoint(output, (point: Point, value: Rgb): Rgb => {
                 return new Rgb(127, 127, 127)
-                    .sub(input.at(point.added(Point.UpLeft)))
-                    .sub(input.at(point.added(Point.Up)))
-                    .sub(input.at(point.added(Point.UpRight)))
-                    .sub(input.at(point.added(Point.Left)))
-                    .sub(value.multiplied(8))
-                    .sub(input.at(point.added(Point.Right)))
-                    .sub(input.at(point.added(Point.DownLeft)))
-                    .sub(input.at(point.added(Point.Down)))
-                    .sub(input.at(point.added(Point.DownRight)))
+                    .sub(input.at(point.clone().add(Point.UpLeft)))
+                    .sub(input.at(point.clone().add(Point.Up)))
+                    .sub(input.at(point.clone().add(Point.UpRight)))
+                    .sub(input.at(point.clone().add(Point.Left)))
+                    .sub(value.clone().multiply(8))
+                    .sub(input.at(point.clone().add(Point.Right)))
+                    .sub(input.at(point.clone().add(Point.DownLeft)))
+                    .sub(input.at(point.clone().add(Point.Down)))
+                    .sub(input.at(point.clone().add(Point.DownRight)))
             });
         }
 
         // Thinning by Zhang-Suen from http://www.hundredsoft.jp/win7blog/log/eid119.html
         static thinning(input: Mat<Rgb>, output: Mat<Rgb>, directionMap: Mat<Rgb>) {
-            var w = input.width;
-            var h = input.height;
+            const w = input.width;
+            const h = input.height;
             var outputData = output.data;
             var directionData = directionMap.data;
             input.forPixels(output, value => value);
@@ -76,14 +75,8 @@ module Core {
                     p[5] = rAry[index + w - 1];
                     p[6] = rAry[index - 1];
                     p[7] = rAry[index - w - 1];
-                    var a = 0;
-                    for (var i = 0; i < 8; i++)
-                        if (!p[i] && p[i + 1 < 8 ? i + 1 : 0])
-                            a++;
-                    var b = 0;
-                    for (var i = 0; i < 8; i++)
-                        if (p[i])
-                            b += 1;
+                    const a = p.filter((v, i) => !p[i] && p[i + 1 < 8 ? i + 1 : 0]).length;
+                    const b = p.filter(v => v).length;
                     if (a == 1 && 2 <= b && b <= 6) {
                         if ((!(k & 1) && !(p[0] && p[2] && p[4]) && !(p[2] && p[4] && p[6]))
                             || ((k & 1) && !(p[0] && p[2] && p[6]) && !(p[0] && p[4] && p[6]))) {
@@ -103,10 +96,7 @@ module Core {
                         p[5] = outputData[(i + w - 1) * 4] == 0;
                         p[6] = outputData[(i - 1) * 4] == 0;
                         p[7] = outputData[(i - w - 1) * 4] == 0;
-                        var q: number;
-                        for (var j = 0; j < 8; j++)
-                            if (p[j])
-                                q = j;
+                        var q = p.lastIndexOf(true);
                         directionData[i * 4] = directionData[i * 4 + 1] = directionData[i * 4 + 2] = q;
                     }
                 }
@@ -118,19 +108,19 @@ module Core {
             directionMap.forPixelsWithPoint((point, direction) => {
                 if (direction.r < 8 && source.at(point).is(Rgb.white)) {
                     var p = point.clone();
-                    var toColor = Rgb.white;
-                    while (toColor.is(Rgb.white)) {
+                    var distColor = Rgb.white;
+                    while (distColor.is(Rgb.white)) {
                         var nextDirectionPoint = this.direction2point(directionMap.at(p).r);
                         if (nextDirectionPoint.is(Point.None)) {
                             nonvalid.push(p);
                             return;
                         }
                         p.add(nextDirectionPoint);
-                        toColor = source.at(p);
-                        if (!toColor.is(Rgb.white)) {
+                        distColor = source.at(p);
+                        if (!distColor.is(Rgb.white)) {
                             var p2 = point.clone();
                             while (source.at(p2).is(Rgb.white)) {
-                                source.at(p2, toColor);
+                                source.at(p2, distColor);
                                 p2.add(this.direction2point(directionMap.at(p2).r));
                             }
                         }
@@ -155,7 +145,7 @@ module Core {
 
         // Vectorize input
         static vectorize(mat: Mat<Rgb>, segments: Array<Segment>) {
-            var directions: Array<Point> = [Point.Right, Point.DownRight, Point.Down, Point.DownLeft];
+            const directions: Array<Point> = [Point.Right, Point.DownRight, Point.Down, Point.DownLeft];
             var remaining = mat.clone();
             remaining.forPixelsWithPoint((start: Point, value: Rgb) => {
                 if (remaining.at(start).is(Rgb.black)) {
@@ -169,7 +159,7 @@ module Core {
                             if (!remaining.isInside(end))
                                 break;
                         }
-                        end.add(direction.inverted());
+                        end.sub(direction);
                         if (!start.is(end)) {
                             segments.push(new Segment(start, end));
                             found = true;

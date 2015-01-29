@@ -17,11 +17,13 @@ module Core {
         public static black = new Rgb(0, 0, 0);
         public static red = new Rgb(255, 0, 0);
         public static blue = new Rgb(0, 0, 255);
-        public static green = new Rgb(0, 255, 0);
-        public static yellow = new Rgb(0, 0, 255);
-        public static orange = new Rgb(255, 128, 0);
-        public static purple = new Rgb(255, 128, 255);
-        public static standards = ['red', 'blue', 'green', 'yellow', 'orange', 'purple'];
+        public static lime = new Rgb(0, 255, 0);
+        public static yellow = new Rgb(255, 255, 0);
+        public static aqua = new Rgb(0, 255, 255);
+        public static fuchsia = new Rgb(255, 0, 255);
+        public static green = new Rgb(0, 128, 0);
+        public static navy = new Rgb(0, 0, 128);
+        public static standards = ['red', 'blue', 'lime', 'yellow', 'aqua', 'fuchsia', 'green', 'navy'];
 
         //RGB値で初期化
         constructor(r: number, g: number, b: number) {
@@ -34,6 +36,10 @@ module Core {
             this.b += color.b;
             return this;
         }
+        //複製を返す
+        clone(): Rgb {
+            return new Rgb(this.r, this.g, this.b);
+        }
         //色を成分ごとに減算する
         sub(color: Rgb): Rgb {
             this.r -= color.r;
@@ -41,13 +47,12 @@ module Core {
             this.b -= color.b;
             return this;
         }
-        //色を成分ごとに加算した色を返す
-        added(color: Rgb): Rgb {
-            return new Rgb(this.r + color.r, this.g + color.g, this.b + color.b);
-        }
         //色を成分ごとに乗算する
-        multiplied(num: number): Rgb {
-            return new Rgb(this.r * num, this.g * num, this.b * num);
+        multiply(num: number): Rgb {
+            this.r += num;
+            this.g += num;
+            this.b += num;
+            return this;
         }
         //等色かどうかを返す
         is(rgb: Rgb): boolean {
@@ -57,16 +62,19 @@ module Core {
             switch (name) {
                 case 'red': return Rgb.red; break;
                 case 'blue': return Rgb.blue; break;
-                case 'green': return Rgb.green; break;
+                case 'lime': return Rgb.lime; break;
                 case 'yellow': return Rgb.yellow; break;
-                case 'orange': return Rgb.orange; break;
-                case 'purple': return Rgb.purple; break;
+                case 'aqua': return Rgb.aqua; break;
+                case 'fuchsia': return Rgb.fuchsia; break;
+                case 'green': return Rgb.green; break;
+                case 'navy': return Rgb.navy; break;
             }
         }
     }
 
     //点
     export class Point {
+        public static Origin = new Point(0, 0);
         public static Up = new Point(0, -1);
         public static UpRight = new Point(1, -1);
         public static Right = new Point(1, 0);
@@ -75,9 +83,9 @@ module Core {
         public static DownLeft = new Point(-1, 1);
         public static Left = new Point(-1, 0);
         public static UpLeft = new Point(-1, -1);
-        public static None = new Point();
+        public static None = new Point(Infinity, Infinity);
         //座標で初期化
-        constructor(public x: number = -1, public y: number = -1) {
+        constructor(public x: number, public y: number) {
         }
         //座標を成分ごとに加算する
         add(point: Point): Point {
@@ -85,9 +93,11 @@ module Core {
             this.y += point.y;
             return this;
         }
-        //座標を成分ごとに加算した点を返す
-        added(point: Point): Point {
-            return new Point(this.x + point.x, this.y + point.y);
+        //座標を成分ごとに加算する
+        sub(point: Point): Point {
+            this.x -= point.x;
+            this.y -= point.y;
+            return this;
         }
         //複製を返す
         clone(): Point {
@@ -95,10 +105,6 @@ module Core {
         }
         innerProduct(vector: Point): number {
             return this.x * vector.x + this.y * vector.y;
-        }
-        //成分ごとに正負反転した点を返す
-        inverted(): Point {
-            return new Point(-this.x, -this.y);
         }
         //等しいかどうかを返す
         is(point: Point): boolean {
@@ -109,11 +115,8 @@ module Core {
             this.y *= scale;
             return this;
         }
-        multiplied(scale: number): Point {
-            return new Point(this.x * scale, this.y * scale);
-        }
         //点との距離を返す
-        norm(point: Point = new Point(0, 0)): number {
+        norm(point: Point = Point.Origin): number {
             return Math.sqrt(Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2));
         }
         normalize(): Point {
@@ -126,25 +129,28 @@ module Core {
 
     //セグメント
     export class Segment {
-        public label: Label = -1;
+        protected _label: Label = -1;
         //始点と終点で初期化
-        constructor(public start: Point = new Point(), public end: Point = new Point()) {
+        constructor(public start: Point = Point.None, public end: Point = Point.None) {
         }
         //重心を返す
         center(): Point {
-            return this.start.added(this.end).multiply(0.5);
+            return this.start.clone().add(this.end).multiply(0.5);
         }
         direction(): Point {
-            return this.end.added(this.start.inverted()).normalize();
+            return this.end.clone().sub(this.start).normalize();
+        }
+        label(): Label {
+            return this._label;
         }
         labeled(): boolean {
-            return this.label != -1;
+            return this._label != -1;
         }
         toString(): string {
-            return "[ " + this.start.toString() + " ~ " + this.end.toString() + ": " + this.label + " ]";
+            return "[ " + this.start.toString() + " ~ " + this.end.toString() + ": " + this._label + " ]";
         }
         setLabel(newLabel: Label): void {
-            this.label = newLabel;
+            this._label = newLabel;
         }
     }
 
@@ -182,9 +188,7 @@ module Core {
                 this.width = arg1;
                 this.height = arg2;
                 this.data = new Uint8Array(this.width * this.height * 4);
-                this.forPixels(this,(rgb: T) => {
-                    return arg3;
-                });
+                this.forPixels(this,() => arg3);
             }
         }
 
@@ -208,10 +212,7 @@ module Core {
                 this.data[index * 4 + 3] = 255;
             } else {
                 //画素値を返す
-                //if (this.dummy instanceof Rgb)
                 return new Rgb(this.data[index * 4], this.data[index * 4 + 1], this.data[index * 4 + 2]);
-                //else
-                //    return this.data[index];
             }
         }
 
@@ -224,11 +225,10 @@ module Core {
         }
 
         draw(segment: Segment, value: T): void {
-            var direction = segment.end.added(segment.start.inverted());
+            var direction = segment.end.clone().sub(segment.start);
             direction.multiply(1 / (direction.x == 0 ? direction.y == 0 ? 1 : Math.abs(direction.y) : Math.abs(direction.x)));
-            for (var p: Point = segment.start.clone(); !p.is(segment.end); p.add(direction)) {
+            for (var p: Point = segment.start.clone(); !p.is(segment.end); p.add(direction))
                 this.at(p, value);
-            }
             this.at(p, value);
         }
 
@@ -278,11 +278,6 @@ module Core {
             return 0 < point.x && 0 < point.y && point.x < this.width && point.y < this.height;
         }
 
-        copyFrom(imageData: ImageData): void {
-            for (var i = 0; i < this.data.length; i++)
-                this.data[i] = imageData.data[i];
-        }
-
         copyTo(imageData: ImageData): void {
             for (var i = 0; i < this.data.length; i++)
                 imageData.data[i] = this.data[i];
@@ -296,12 +291,12 @@ module Core {
         }
 
         //点をインデックスに変換する
-        private point2Index(point: Point): number {
+        protected point2Index(point: Point): number {
             return point.y * this.width + point.x;
         }
 
         //インデックスを点に変換する
-        private index2Point(index: number): Point {
+        protected index2Point(index: number): Point {
             return new Point(index % this.width,(index - index % this.width) / this.width);
         }
 
