@@ -8,7 +8,7 @@ module Gui {
         return new Point(Math.round(jpoint.clientX), Math.round(jpoint.clientY));
     }
 
-    var colors: string[] = Core.Rgb.standards;
+    const colors: string[] = Core.Rgb.standards;
 
     export class Loader {
         static json2stroke(stroke: Segments, json: any) {
@@ -46,7 +46,7 @@ module Gui {
     export class Scribbler {
         color: string = colors[0];
         protected previous: Point = null;
-        protected currentLabel: Label = new Core.Label(0);
+        protected currentLabel: Label = 0;
 
         constructor(protected scribbles: Array<Segments>, protected usingColors: string[]) {
         }
@@ -58,7 +58,7 @@ module Gui {
         move(next: Point): Segment {
             var newSegment = new Segment(this.previous, next);
             newSegment.setLabel(this.currentLabel);
-            this.scribbles[this.currentLabel.toNumber()].push(newSegment);
+            this.scribbles[this.currentLabel].push(newSegment);
             this.previous = next;
             return newSegment;
         }
@@ -68,7 +68,7 @@ module Gui {
                 this.usingColors.push(this.color);
                 this.scribbles.push([]);
             }
-            this.currentLabel = new Label(this.usingColors.indexOf(this.color));
+            this.currentLabel = this.usingColors.indexOf(this.color);
             this.previous = point;
         }
 
@@ -114,7 +114,7 @@ module Gui {
 
         restore(): void {
             var mat: Mat<Rgb> = new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white);
-            this.stroke_layer.object.forEach((segment) => mat.draw(segment, Rgb.fromString(this.colors[segment.label.toNumber()])));
+            this.stroke_layer.object.forEach((segment) => mat.draw(segment, Rgb.fromString(this.colors[segment.label])));
             var imageData: ImageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
             Processor.restore(mat, this.direction_map_layer.object);
             mat.copyTo(imageData);
@@ -184,7 +184,7 @@ module Gui {
             else if (arg instanceof Segment) {
                 var segment: Segment = arg;
                 if (segment) {
-                    this.context.strokeStyle = (segment.label.toNumber() < 0) ? 'black' : this.colors[segment.label.toNumber()];
+                    this.context.strokeStyle = (segment.label < 0) ? 'black' : this.colors[segment.label];
                     this.context.lineWidth = 1;
                     this.context.beginPath();
                     this.context.moveTo(segment.start.x, segment.start.y);
@@ -208,7 +208,7 @@ module Gui {
         getLabels(): number[] {
             var n: number[] = [];
             for (var i = 0; i < this.stroke_layer.object.length; i++) {
-                n.push(this.stroke_layer.object[i].label.toNumber());
+                n.push(this.stroke_layer.object[i].label);
             }
             return n;
         }

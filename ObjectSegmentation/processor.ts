@@ -17,15 +17,9 @@ module Core {
         }
 
         // Binarize input to output using threshold value
-        static binarize(input: Mat<Rgb>, output: Core.SimpleMat<boolean>, threshold: number): void;
         static binarize(input: Mat<Rgb>, output: Mat<Rgb>, threshold: number): void;
         static binarize(input: Mat<Rgb>, output: any, threshold: number): void {
-            if (output instanceof Mat)
                 input.forPixels(output, (value: Rgb) => (value.r < threshold && value.g < threshold && value.b < threshold) ? Rgb.black : Rgb.white);
-            else
-                input.forPixels(output, (value: Rgb) => {
-                    return value.r < threshold && value.g < threshold && value.b < threshold;
-                });
         }
 
         // Convert input to output as a grayscale
@@ -40,15 +34,15 @@ module Core {
         static extractEdge(input: Mat<Rgb>, output: Mat<Rgb>) {
             input.forPixelsWithPoint(output, (point: Point, value: Rgb): Rgb => {
                 return new Rgb(127, 127, 127)
-                    .sub(input.at(point.added(new Point(-1, -1))))
-                    .sub(input.at(point.added(new Point(0, -1))))
-                    .sub(input.at(point.added(new Point(+1, -1))))
-                    .sub(input.at(point.added(new Point(-1, 0))))
+                    .sub(input.at(point.added(Point.UpLeft)))
+                    .sub(input.at(point.added(Point.Up)))
+                    .sub(input.at(point.added(Point.UpRight)))
+                    .sub(input.at(point.added(Point.Left)))
                     .sub(value.multiplied(8))
-                    .sub(input.at(point.added(new Point(+1, 0))))
-                    .sub(input.at(point.added(new Point(-1, +1))))
-                    .sub(input.at(point.added(new Point(0, +1))))
-                    .sub(input.at(point.added(new Point(+1, +1))))
+                    .sub(input.at(point.added(Point.Right)))
+                    .sub(input.at(point.added(Point.DownLeft)))
+                    .sub(input.at(point.added(Point.Down)))
+                    .sub(input.at(point.added(Point.DownRight)))
             });
         }
 
@@ -120,13 +114,18 @@ module Core {
         }
 
         static restore(source: Mat<Rgb>, directionMap: Mat<Rgb>) {
+            var nonvalid: Point[] = [];
             directionMap.forPixelsWithPoint((point, direction) => {
                 if (direction.r < 8 && source.at(point).is(Rgb.white)) {
                     var p = point.clone();
                     var toColor = Rgb.white;
                     while (toColor.is(Rgb.white)) {
-                        var d = directionMap.at(p).r;
-                        p.add(this.direction2point(d));
+                        var nextDirectionPoint = this.direction2point(directionMap.at(p).r);
+                        if (nextDirectionPoint.is(Point.None)) {
+                            nonvalid.push(p);
+                            return;
+                        }
+                        p.add(nextDirectionPoint);
                         toColor = source.at(p);
                         if (!toColor.is(Rgb.white)) {
                             var p2 = point.clone();
@@ -142,21 +141,21 @@ module Core {
 
         protected static direction2point(direction: number): Point {
             switch (direction) {
-                case 0: return new Point(0, -1);
-                case 1: return new Point(1, -1);
-                case 2: return new Point(1, 0);
-                case 3: return new Point(1, 1);
-                case 4: return new Point(0, 1);
-                case 5: return new Point(-1, 1);
-                case 6: return new Point(-1, 0);
-                case 7: return new Point(-1, -1);
-                default: alert('Err!');
+                case 0: return Point.Up;
+                case 1: return Point.UpRight;
+                case 2: return Point.Right;
+                case 3: return Point.DownRight;
+                case 4: return Point.Down;
+                case 5: return Point.DownLeft;
+                case 6: return Point.Left;
+                case 7: return Point.UpLeft;
+                default: return Point.None;
             }
         }
 
         // Vectorize input
         static vectorize(mat: Mat<Rgb>, segments: Array<Segment>) {
-            var directions: Array<Point> = [new Point(1, 0), new Point(1, 1), new Point(0, 1), new Point(-1, 1)];
+            var directions: Array<Point> = [Point.Right, Point.DownRight, Point.Down, Point.DownLeft];
             var remaining = mat.clone();
             remaining.forPixelsWithPoint((start: Point, value: Rgb) => {
                 if (remaining.at(start).is(Rgb.black)) {

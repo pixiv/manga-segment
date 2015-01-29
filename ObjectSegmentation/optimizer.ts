@@ -40,7 +40,7 @@ module Optimizer {
             }
         }
 
-        private calculateFlow(s: number, t: number): void {
+        protected calculateFlow(s: number, t: number): void {
             while (true) {
                 var parent: number[] = [];
                 for (var k = 0; k < this.node_count; k++)

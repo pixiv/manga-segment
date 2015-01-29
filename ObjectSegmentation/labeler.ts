@@ -4,11 +4,17 @@
 
 module Labeler {
 
+    export function reset(segments: Segments) {
+        for (var i = 0; i < segments.length; i++) {
+            segments[i].setLabel(-1);
+        }
+    }
+
     enum Feature {
         Proximity,
         Direction
     };
-    var Features: Array<Feature> = [Feature.Proximity, Feature.Direction];
+    const Features: Array<Feature> = [Feature.Proximity, Feature.Direction];
 
     export class Parameters {
         default_energy: number = 0.0001;
@@ -20,13 +26,32 @@ module Labeler {
     }
 
     export class NearestScribbles {
+        public remainingSegments: Segments;
+        nearests: Segments;
 
-        constructor(protected seeds: Array<Segments>, public target: Array<Segment>) {
+        constructor(protected seeds: Array<Segments>, target: Array<Segment>) {
+            this.remainingSegments = [];
+            for (var i = 0; i < target.length; i++) {
+                this.remainingSegments.push(target[i]);
+            }
         }
 
-        setNearest(offset: number): void {
-            for (var i = 0; i < this.target.length; i++) {
-                var targetSegment = this.target[i];
+        expandNearest(maxSegments: number) {
+            this.setNearests();
+            for (var offset = 5; maxSegments < this.remainingSegments.length; offset += 5)
+                for (var i = 0; i < this.remainingSegments.length; i++) {
+                    if (this.remainingSegments[i].center().norm(this.nearests[i].center()) < offset) {
+                        this.remainingSegments[i].setLabel(this.nearests[i].label);
+                        this.remainingSegments.splice(i, 1);
+                        this.nearests.splice(i, 1);
+                    }
+                }
+        }
+
+        setNearests(): void {
+            this.nearests = [];
+            for (var i = 0; i < this.remainingSegments.length; i++) {
+                var targetSegment = this.remainingSegments[i];
                 var minNorm: number = Infinity;
                 var nearestSeed: Segment;
                 this.seeds.forEach((seed) => {
@@ -38,8 +63,7 @@ module Labeler {
                         }
                     });
                 });
-                if (minNorm < offset)
-                    targetSegment.setLabel(nearestSeed.label);
+                this.nearests[i] = nearestSeed;
             }
         }
     }
@@ -57,7 +81,7 @@ module Labeler {
         }
 
         run() {
-            this.parameters.max_prox = Infinity;//this.parameters.sigma_smooth[<number>Feature.Proximity] * Math.sqrt(Math.log(this.parameters.default_energy * this.parameters.sigma_smooth[<number>Feature.Proximity]));
+            this.parameters.max_prox = this.parameters.sigma_smooth[<number>Feature.Proximity] * Math.sqrt(Math.log(this.parameters.default_energy * this.parameters.sigma_smooth[<number>Feature.Proximity]));
             this.NODENUM = this.target.length + 2;
             this.SOURCE = this.target.length;
             this.SINK = this.target.length + 1;
@@ -98,14 +122,16 @@ module Labeler {
                             this.capacity[this.SINK][this.SOURCE] = 0;
                             this.capacity[this.SOURCE][this.SINK] = 0;
                             var optimizer = new Optimizer.EdmondsKarp(this.edges, this.capacity);
-                            var label = new Label(id);
+                            var label = id;
+                            $("#status").html($("#status").html() + 'Graph constructed<br />');
                             optimizer.minCut(this.SOURCE, this.SINK).forEach((node) => {
                                 if (node < this.target.length)
                                     this.target[node].setLabel(label);
                             });
+                            $("#status").html($("#status").html() + 'Optimized<br />');
                         }
                         // Assign 0 to unlabeled segments
-                        var label = new Label(0);
+                        var label = 0;
                         for (var k in this.target) {
                             if (!this.target[k].labeled())
                                 this.target[k].setLabel(label);

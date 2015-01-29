@@ -3,19 +3,7 @@
 module Core {
 
     //セグメントに振るラベル
-    export class Label {
-        public static None = new Label();
-        //数値で初期化
-        constructor(private id: number = -1) {
-        }
-        is(label: Label) {
-            return this.toNumber() == label.toNumber();
-        }
-        //数値へのキャスト
-        toNumber(): number {
-            return this.id;
-        }
-    }
+    export type Label = number;
 
     class Color<T> {
         constructor(public r: T, public g: T, public b: T) {
@@ -79,6 +67,14 @@ module Core {
 
     //点
     export class Point {
+        public static Up = new Point(0, -1);
+        public static UpRight = new Point(1, -1);
+        public static Right = new Point(1, 0);
+        public static DownRight = new Point(1, 1);
+        public static Down = new Point(0, 1);
+        public static DownLeft = new Point(-1, 1);
+        public static Left = new Point(-1, 0);
+        public static UpLeft = new Point(-1, -1);
         public static None = new Point();
         //座標で初期化
         constructor(public x: number = -1, public y: number = -1) {
@@ -121,7 +117,7 @@ module Core {
             return Math.sqrt(Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2));
         }
         normalize(): Point {
-            return this.multiply(1 / this.norm());
+            return (this.norm() == 0) ? this : this.multiply(1 / this.norm());
         }
         toString(): string {
             return "(" + this.x + ", " + this.y + ")";
@@ -130,7 +126,7 @@ module Core {
 
     //セグメント
     export class Segment {
-        public label: Label = new Label();
+        public label: Label = -1;
         //始点と終点で初期化
         constructor(public start: Point = new Point(), public end: Point = new Point()) {
         }
@@ -142,10 +138,10 @@ module Core {
             return this.end.added(this.start.inverted()).normalize();
         }
         labeled(): boolean {
-            return !this.label.is(Label.None);
+            return this.label != -1;
         }
         toString(): string {
-            return "[ " + this.start.toString() + " ~ " + this.end.toString() + ": " + this.label.toNumber() + " ]";
+            return "[ " + this.start.toString() + " ~ " + this.end.toString() + ": " + this.label + " ]";
         }
         setLabel(newLabel: Label): void {
             this.label = newLabel;
@@ -186,7 +182,7 @@ module Core {
                 this.width = arg1;
                 this.height = arg2;
                 this.data = new Uint8Array(this.width * this.height * 4);
-                this.forPixels(this, (rgb: T) => {
+                this.forPixels(this,(rgb: T) => {
                     return arg3;
                 });
             }
@@ -238,16 +234,11 @@ module Core {
 
         //画素を走査して処理する
         forPixels(output: Mat<T>, handler: (value: T) => T): void;
-        forPixels(output: Core.SimpleMat<boolean>, handler: (value: T) => boolean): void;
         //画素を走査して処理する
         forPixels(handler: (value: T) => void): void;
         //オーバーロードのためのダミー
         forPixels(arg1: any, arg2?: any) {
             if (arg1 instanceof Mat) {
-                //画素を走査して処理する
-                for (var index = 0; index < this.width * this.height; index++)
-                    arg1.at(index, arg2(this.at(index)));
-            } else if (arg1 instanceof Core.SimpleMat) {
                 //画素を走査して処理する
                 for (var index = 0; index < this.width * this.height; index++)
                     arg1.at(index, arg2(this.at(index)));
@@ -311,131 +302,7 @@ module Core {
 
         //インデックスを点に変換する
         private index2Point(index: number): Point {
-            return new Point(index % this.width, (index - index % this.width) / this.width);
-        }
-
-    }
-
-    //画像
-    export class SimpleMat<T> {
-        //横縦の長さ
-        public width: number;
-        public height: number;
-        //画素の値
-        public data: T[];
-
-        constructor();
-        //縦横と画素値で初期化
-        constructor(width: number, height: number, data: T[]);
-        constructor(width: number, height: number, value: T);
-        //ImageDataからのキャスト
-        constructor(imageData: ImageData);
-        //オーバーロードのためのダミー
-        constructor(arg1?: any, arg2?: number, arg3?: any) {
-            if (!arg1) {
-                this.width = 0;
-                this.height = 0;
-            } else if (arg1 instanceof ImageData) {
-                this.width = arg1.width;
-                this.height = arg1.height;
-                this.data = arg1.data;
-            } else if (arg3 instanceof Array) {
-                this.width = arg1;
-                this.height = arg2;
-                this.data = arg3;
-            } else {
-                this.width = arg1;
-                this.height = arg2;
-                this.data = new Array<T>(this.width * this.height);
-                for (var i = 0; i < this.data.length; i++) {
-                    this.data[i] = arg3;
-                }
-            }
-        }
-
-        //点に対応する画素値を返す
-        at(point: Point): T;
-        //点に画素値を設定する
-        at(point: Point, value: T): void;
-        //インデックスに対応する画素値を返す
-        at(index: number): T;
-        //インデックスに画素値を設定する
-        at(index: number, value: T): void;
-        //オーバーロードのためのダミー
-        at(arg1: any, arg2?: any): any {
-            //点ならインデックスに変換する
-            var index: number = (arg1 instanceof Point) ? this.point2Index(arg1) : arg1;
-            if (arg2 instanceof Rgb) {
-                //画素値を設定する
-                this.data[index] = arg2;
-            } else {
-                //画素値を返す
-                return this.data[index];
-            }
-        }
-
-        //複製を返す
-        clone(): SimpleMat<T> {
-            var newData: T[] = [];
-            for (var i = 0; i < this.data.length; i++)
-                newData.push(this.data[i]);
-            return new SimpleMat<T>(this.width, this.height, newData);
-        }
-
-        //画素を走査して処理する
-        forPixels(output: SimpleMat<T>, handler: (value: T) => T): void;
-        //画素を走査して処理する
-        forPixels(handler: (value: T) => void): void;
-        //オーバーロードのためのダミー
-        forPixels(arg1: any, arg2?: any) {
-            if (arg1 instanceof SimpleMat) {
-                //画素を走査して処理する
-                for (var index = 0; index < this.data.length; index++)
-                    arg1.at(index, arg2(this.at(index)));
-            } else {
-                //画素を走査して処理する
-                for (var index = 0; index < this.data.length; index++)
-                    arg1(this.at(index));
-            }
-        }
-
-        //画素を走査して処理する
-        forPixelsWithPoint(output: SimpleMat<T>, handler: (point: Point, value: T) => T): void;
-        //画素を走査して処理する
-        forPixelsWithPoint(handler: (point: Point, value: T) => void): void;
-        //オーバーロードのためのダミー
-        forPixelsWithPoint(arg1: any, arg2?: any) {
-            if (arg1 instanceof SimpleMat) {
-                //画素を走査して処理する
-                for (var index = 0; index < this.data.length; index++)
-                    arg1.at(index, arg2(this.index2Point(index), this.at(index)));
-            } else {
-                //画素を走査して処理する
-                for (var index = 0; index < this.data.length; index++)
-                    arg1(this.index2Point(index), this.at(index));
-            }
-        }
-
-        //画素を走査して処理する
-        forInnerPixels(handler: (index: number) => void): void {
-            for (var index = this.width; index < this.data.length - this.width; index++)
-                if (0 < index % this.width && index % this.width < this.width - 1)
-                    handler(index);
-        }
-
-        //点が画像の内側かどうかを返す
-        isInside(point: Point): boolean {
-            return 0 < point.x && 0 < point.y && point.x < this.width && point.y < this.height;
-        }
-
-        //点をインデックスに変換する
-        private point2Index(point: Point): number {
-            return point.y * this.width + point.x;
-        }
-
-        //インデックスを点に変換する
-        private index2Point(index: number): Point {
-            return new Point(index % this.width, (index - index % this.width) / this.width);
+            return new Point(index % this.width,(index - index % this.width) / this.width);
         }
 
     }
