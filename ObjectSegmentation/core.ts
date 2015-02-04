@@ -5,29 +5,37 @@ module Core {
     //セグメントに振るラベル
     export type Label = number;
 
-    class Color<T> {
-        constructor(public r: T, public g: T, public b: T) {
-        }
+    interface IColor {
+    }
+
+    interface Color extends IColor {
+        new (values: number[]): Color;
     }
 
     //RGB色
-    export class Rgb extends Color<number> {
+    export class Rgb implements IColor {
         //色定数
-        public static white = new Rgb(255, 255, 255);
-        public static black = new Rgb(0, 0, 0);
-        public static red = new Rgb(255, 0, 0);
-        public static blue = new Rgb(0, 0, 255);
-        public static lime = new Rgb(0, 255, 0);
-        public static yellow = new Rgb(255, 255, 0);
-        public static aqua = new Rgb(0, 255, 255);
-        public static fuchsia = new Rgb(255, 0, 255);
-        public static green = new Rgb(0, 128, 0);
-        public static navy = new Rgb(0, 0, 128);
+        public static white = new Rgb([255, 255, 255]);
+        public static black = new Rgb([0, 0, 0]);
+        public static red = new Rgb([255, 0, 0]);
+        public static blue = new Rgb([0, 0, 255]);
+        public static lime = new Rgb([0, 255, 0]);
+        public static yellow = new Rgb([255, 255, 0]);
+        public static aqua = new Rgb([0, 255, 255]);
+        public static fuchsia = new Rgb([255, 0, 255]);
+        public static green = new Rgb([0, 128, 0]);
+        public static navy = new Rgb([0, 0, 128]);
         public static standards = ['red', 'blue', 'lime', 'yellow', 'aqua', 'fuchsia', 'green', 'navy'];
 
+        public r: number;
+        public b: number;
+        public g: number;
+
         //RGB値で初期化
-        constructor(r: number, g: number, b: number) {
-            super(r, g, b);
+        constructor(values: number[]) {
+            this.r = values[0];
+            this.g = values[1];
+            this.b = values[2];
         }
         //色を成分ごとに加算する
         add(color: Rgb): Rgb {
@@ -38,7 +46,7 @@ module Core {
         }
         //複製を返す
         clone(): Rgb {
-            return new Rgb(this.r, this.g, this.b);
+            return new Rgb([this.r, this.g, this.b]);
         }
         //色を成分ごとに減算する
         sub(color: Rgb): Rgb {
@@ -157,8 +165,7 @@ module Core {
     export interface Segments extends Array<Segment> { };
 
     //画像
-    export class Mat<T> {
-        protected dummy: T;
+    export class Mat<T extends IColor> {
         //横縦の長さ
         public width: number;
         public height: number;
@@ -212,7 +219,7 @@ module Core {
                 this.data[index * 4 + 3] = 255;
             } else {
                 //画素値を返す
-                return new Rgb(this.data[index * 4], this.data[index * 4 + 1], this.data[index * 4 + 2]);
+                return new Rgb([this.data[index * 4], this.data[index * 4 + 1], this.data[index * 4 + 2]]);
             }
         }
 

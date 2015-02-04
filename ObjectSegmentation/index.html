@@ -1,5 +1,7 @@
 ﻿<!DOCTYPE html>
+
 <html>
+
 <head>
     <title>Object Segmentation</title>
     <link rel="stylesheet" href="index.css" />
@@ -11,23 +13,26 @@
     <script src="gui.js"></script>
     <script src="main.js"></script>
 </head>
-<body>
-    <div id="main">
-        <canvas id="canvas"></canvas>
-        <div id="palettes">
-        </div>
-    </div>
 
-    <form method="post" action="javascript:void(0);">
-        <fieldset class="displaying">
-            <legend>Layers</legend>
-            <input type="checkbox" id="visibility_source" checked="checked" /><label for="visibility_source">Source</label>
-            <input type="checkbox" id="visibility_scribbles" checked="checked" /><label for="visibility_scribbles">Scribble</label>
-            <input type="checkbox" id="visibility_stroke" /><label for="visibility_stroke">Stroke</label>
-            <input type="checkbox" id="visibility_direction_map" /><label for="visibility_direction_map">Direction map</label>
-            <input type="checkbox" id="visibility_result" checked="checked" /><label for="visibility_result">Result</label>
-        </fieldset>
-    </form>
+<body>
+
+<div id="main">
+    <canvas id="canvas"></canvas>
+    <div id="palettes">
+    </div>
+</div>
+
+<form method="post" action="javascript:void(0);">
+    <fieldset class="displaying">
+        <legend>Layers</legend>
+        <input type="checkbox" id="source" checked="checked" /><label for="source">Source</label>
+        <input type="checkbox" id="scribbles" checked="checked" /><label for="scribbles">Scribble</label>
+        <input type="checkbox" id="stroke" /><label for="stroke">Stroke</label>
+        <input type="checkbox" id="direction_map" /><label for="direction_map">Direction map</label>
+        <input type="checkbox" id="result" checked="checked" /><label for="result">Result</label>
+    </fieldset>
+</form>
 
 </body>
+
 </html>

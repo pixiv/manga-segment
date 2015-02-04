@@ -127,10 +127,10 @@ module Gui {
         }
 
         setVisibility(): void {
-            this.mat_layer.visible = $("#visibility_source").prop("checked");
-            this.scribbles_layer.visible = $("#visibility_scribbles").prop("checked");
-            this.stroke_layer.visible = $("#visibility_stroke").prop("checked");
-            this.direction_map_layer.visible = $("#visibility_direction_map").prop("checked");
+            this.mat_layer.visible = $("#source").prop("checked");
+            this.scribbles_layer.visible = $("#scribbles").prop("checked");
+            this.stroke_layer.visible = $("#stroke").prop("checked");
+            this.direction_map_layer.visible = $("#direction_map").prop("checked");
         }
 
         update(): void {

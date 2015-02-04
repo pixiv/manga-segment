@@ -13,7 +13,7 @@ module Core {
 
         // Invert input to output
         static invert(input: Mat<Rgb>, output: Mat<Rgb>) {
-            input.forPixels(output, (value: Rgb) => new Rgb(255 - value.r, 255 - value.g, 255 - value.b));
+            input.forPixels(output, (value: Rgb) => new Rgb([255 - value.r, 255 - value.g, 255 - value.b]));
         }
 
         // Binarize input to output using threshold value
@@ -25,14 +25,14 @@ module Core {
         static convertToGray(input: Mat<Rgb>, output: Mat<Rgb>) {
             input.forPixels(output, (value: Rgb): Rgb => {
                 var newValue = value.r * 0.2126 + value.g * 0.7152 + value.b * 0.0722;
-                return new Rgb(newValue, newValue, newValue);
+                return new Rgb([newValue, newValue, newValue]);
             });
         }
 
         // Extract edges from input to output
         static extractEdge(input: Mat<Rgb>, output: Mat<Rgb>) {
             input.forPixelsWithPoint(output, (point: Point, value: Rgb): Rgb => {
-                return new Rgb(127, 127, 127)
+                return new Rgb([127, 127, 127])
                     .sub(input.at(point.clone().add(Point.UpLeft)))
                     .sub(input.at(point.clone().add(Point.Up)))
                     .sub(input.at(point.clone().add(Point.UpRight)))

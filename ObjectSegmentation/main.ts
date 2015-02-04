@@ -86,22 +86,22 @@ $(window).on("load",() => {
         }
     });
 
-    $("#visibility_source").on("click",() => {
+    $("#source").on("click",() => {
         visualizer.setVisibility();
         visualizer.update();
     });
 
-    $("#visibility_scribbles").on("click",() => {
+    $("#scribbles").on("click",() => {
         visualizer.setVisibility();
         visualizer.update();
     });
 
-    $("#visibility_stroke").on("click",() => {
+    $("#stroke").on("click",() => {
         visualizer.setVisibility();
         visualizer.update();
     });
 
-    $("#visibility_direction_map").on("click",() => {
+    $("#direction_map").on("click",() => {
         visualizer.setVisibility();
         visualizer.update();
     });
