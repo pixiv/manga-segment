@@ -15,20 +15,19 @@
 
 <body>
 
-<div id="main">
-    <canvas id="canvas"></canvas>
-    <div id="palettes">
-    </div>
+<div id="object_segmentation">
+    <canvas></canvas>
+    <div></div>
 </div>
 
 <form method="post" action="javascript:void(0);">
     <fieldset class="displaying">
         <legend>Layers</legend>
-        <input type="checkbox" id="source" checked="checked" /><label for="source">Source</label>
-        <input type="checkbox" id="scribbles" checked="checked" /><label for="scribbles">Scribble</label>
-        <input type="checkbox" id="stroke" /><label for="stroke">Stroke</label>
-        <input type="checkbox" id="direction_map" /><label for="direction_map">Direction map</label>
-        <input type="checkbox" id="result" checked="checked" /><label for="result">Result</label>
+        <input type="checkbox" id="visible_source" checked="checked" /><label for="visible_source">Source</label>
+        <input type="checkbox" id="visible_scribbles" checked="checked" /><label for="visible_scribbles">Scribble</label>
+        <input type="checkbox" id="visible_stroke" /><label for="visible_stroke">Stroke</label>
+        <input type="checkbox" id="visible_direction_map" /><label for="visible_direction_map">Direction map</label>
+        <input type="checkbox" id="visible_result" checked="checked" /><label for="visible_result">Result</label>
     </fieldset>
 </form>
 

@@ -2,8 +2,6 @@
 /// <reference path="gui.ts" />
 /// <reference path="labeler.ts" />
 "use strict";
-var _this = this;
-var Processor = Cv.Processor;
 $(window).on("load", function () {
     var source;
     var scribbles = new Array();
@@ -15,40 +13,37 @@ $(window).on("load", function () {
     var scribbler = new Gui.Scribbler(scribbles, colors);
     scribbler.createPalettes();
     var visualizer = new Gui.Visualizer();
-    visualizer.setCanvas($("#canvas")[0]);
+    visualizer.setCanvas($("div#object_segmentation canvas")[0]);
     var image = new Image();
     image.src = "images/lovehina01_040_2_bin.png";
     $(image).on("load", function () {
-        _this.canvas.width = image.width;
-        _this.canvas.height = image.height;
-        _this.canvas.getContext('2d').drawImage(image, 0, 0);
-        var imageData = _this.canvas.getContext('2d').getImageData(0, 0, _this.canvas.width, _this.canvas.height);
+        var canvas = $("div#object_segmentation canvas")[0];
+        canvas.width = image.width;
+        canvas.height = image.height;
+        canvas.getContext('2d').drawImage(image, 0, 0);
+        var imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
         source = new Mat(imageData);
         var directionMap = new Mat(source.width, source.height, Rgb.black);
         var thinned = source.clone();
-        Processor.binarize(thinned, thinned, 200);
-        Processor.thinning(thinned, thinned, directionMap);
-        Processor.vectorize(thinned, stroke);
-        $("#stroke_text").text(JSON.stringify(stroke));
+        Cv.Processor.binarize(thinned, thinned, 200);
+        Cv.Processor.thinning(thinned, thinned, directionMap);
+        Cv.Processor.vectorize(thinned, stroke);
         visualizer.setObjects(source, scribbles, stroke, directionMap);
         visualizer.setVisibility();
         visualizer.colors = colors;
         visualizer.update();
-        $("#status").html($("#status").html() + 'Loaded<br />');
     });
     if (stroke_file) {
-        $.getJSON("images/x_bin.js", function (json) { return Gui.Converter.json2stroke(stroke, json); }).done(function () {
-            $("#stroke_text").text(JSON.stringify(stroke));
+        $.getJSON(stroke_file, function (json) { return Gui.Converter.json2stroke(stroke, json); }).done(function () {
             visualizer.update();
         });
     }
     if (input_file) {
-        $.getJSON("images/x_input.js", function (json) { return Gui.Converter.json2scribbles(scribbles, colors, json); }).done(function () {
-            $("#scribble_text").text(JSON.stringify(scribbles));
+        $.getJSON(input_file, function (json) { return Gui.Converter.json2scribbles(scribbles, colors, json); }).done(function () {
             visualizer.update();
         });
     }
-    $("#canvas").on({
+    $("div#object_segmentation canvas").on({
         "mousemove": function (e) {
             if (scribbler.drawing())
                 visualizer.draw(scribbler.move(Gui.Converter.jevent2point(e)));
@@ -72,19 +67,19 @@ $(window).on("load", function () {
             }
         }
     });
-    $("#source").on("click", function () {
+    $("input#visible_source").on("click", function () {
         visualizer.setVisibility();
         visualizer.update();
     });
-    $("#scribbles").on("click", function () {
+    $("input#visible_scribbles").on("click", function () {
         visualizer.setVisibility();
         visualizer.update();
     });
-    $("#stroke").on("click", function () {
+    $("input#visible_stroke").on("click", function () {
         visualizer.setVisibility();
         visualizer.update();
     });
-    $("#direction_map").on("click", function () {
+    $("input#visible_direction_map").on("click", function () {
         visualizer.setVisibility();
         visualizer.update();
     });

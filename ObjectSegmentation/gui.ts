@@ -85,7 +85,7 @@ module Gui {
 
         createPalettes(): void {
             Cv.Rgb.standards.forEach((color) => {
-                $("#palettes").append(
+                $("div#object_segmentation div").append(
                     $("<span/>")
                         .attr("id", color)
                         .css("background-color", color)
@@ -96,7 +96,7 @@ module Gui {
                     })
                     );
             });
-            $("#" + this.color, $("#palettes")).toggleClass("selected");
+            $("#" + this.color, $("div#object_segmentation div")).toggleClass("selected");
         }
 
     }
@@ -129,10 +129,10 @@ module Gui {
         }
 
         setVisibility(): void {
-            this.mat_layer.visible = $("#source").prop("checked");
-            this.scribbles_layer.visible = $("#scribbles").prop("checked");
-            this.stroke_layer.visible = $("#stroke").prop("checked");
-            this.direction_map_layer.visible = $("#direction_map").prop("checked");
+            this.mat_layer.visible = $("#visible_source").prop("checked");
+            this.scribbles_layer.visible = $("#visible_scribbles").prop("checked");
+            this.stroke_layer.visible = $("#visible_stroke").prop("checked");
+            this.direction_map_layer.visible = $("#visible_direction_map").prop("checked");
         }
         
         update(): void {
@@ -154,7 +154,7 @@ module Gui {
             var mat: Mat<Rgb> = new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white);
             this.stroke_layer.object.forEach((segment) => mat.draw(segment, Rgb.fromString(this.colors[segment.label()])));
             var imageData: ImageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
-            Processor.restore(mat, this.direction_map_layer.object);
+            Cv.Processor.restore(mat, this.direction_map_layer.object);
             mat.copyTo(imageData);
             this.context.putImageData(imageData, 0, 0);
         }
