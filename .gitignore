@@ -3,3 +3,12 @@
 ObjectSegmentation/bin/
 ObjectSegmentation/obj/
 *.png
+ObjectSegmentation.v12.suo
+ObjectSegmentation/ObjectSegmentation.csproj.user
+ObjectSegmentation/images/br.csv
+ObjectSegmentation/images/cap.csv
+ObjectSegmentation/images/cap.xlsx
+ObjectSegmentation/images/rb.csv
+ObjectSegmentation/images/stroke.d.ts
+ObjectSegmentation/push_relabel.ts
+ObjectSegmentation/simplicial-complex.ts

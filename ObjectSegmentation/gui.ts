@@ -1,23 +1,26 @@
-﻿/// <reference path="processor.ts" />
+﻿"use strict"
 
-"use strict"
+import Rgb = Cv.Rgb;
+import Mat = Cv.Mat;
+import Segment = Cv.Segment;
 
 module Gui {
 
-    export function convert(jpoint: JQueryEventObject): Point {
-        return new Point(Math.round(jpoint.clientX), Math.round(jpoint.clientY));
-    }
+    export class Converter {
 
-    export class Loader {
-        static json2stroke(stroke: Segments, json: any) {
+        static jevent2point(jpoint: JQueryEventObject): Cv.Point {
+            return new Cv.Point(Math.round(jpoint.clientX), Math.round(jpoint.clientY));
+        }
+
+        static json2stroke(stroke: Cv.Segment[], json: any) {
             stroke.length = 0;
             for (var member in json) {
                 stroke.push(new Segment());
-                Gui.Loader.extend(stroke[stroke.length - 1], json[member]);
+                Gui.Converter.extend(stroke[stroke.length - 1], json[member]);
             }
         }
 
-        static json2scribbles(scribbles: Array<Segments>, colors: string[], json: any) {
+        static json2scribbles(scribbles: Array<Cv.Segment[]>, colors: string[], json: any) {
             colors.length = 0;
             scribbles.length = 0;
             for (var member in json) {
@@ -42,18 +45,18 @@ module Gui {
     }
 
     export class Scribbler {
-        protected color: string = Core.Rgb.standards[0];
-        protected previous: Point = null;
-        protected currentLabel: Label = 0;
+        protected color: string = Cv.Rgb.standards[0];
+        protected previous: Cv.Point = null;
+        protected currentLabel: Cv.Label = 0;
 
-        constructor(protected scribbles: Array<Segments>, protected colors: string[]) {
+        constructor(protected scribbles: Array<Cv.Segment[]>, protected colors: string[]) {
         }
 
         drawing(): boolean {
             return this.previous != null;
         }
 
-        move(next: Point): Segment {
+        move(next: Cv.Point): Segment {
             var newSegment = new Segment(this.previous, next);
             newSegment.setLabel(this.currentLabel);
             this.scribbles[this.currentLabel].push(newSegment);
@@ -61,7 +64,7 @@ module Gui {
             return newSegment;
         }
 
-        start(point: Point): void {
+        start(point: Cv.Point): void {
             if (!this.colors || this.colors.indexOf(this.color) == -1) {
                 this.colors.push(this.color);
                 this.scribbles.push([]);
@@ -74,21 +77,21 @@ module Gui {
             this.previous = null;
         }
 
-        label(): Label {
+        label(): Cv.Label {
             return this.currentLabel;
         }
 
         createPalettes(): void {
-            Core.Rgb.standards.forEach((color) => {
+            Cv.Rgb.standards.forEach((color) => {
                 $("#palettes").append(
                     $("<span/>")
                         .attr("id", color)
                         .css("background-color", color)
-                        .on("click", (e) => {
-                            $("#" + this.color).toggleClass("selected");
-                            this.color = color;
-                            $(e.target).toggleClass("selected");
-                        })
+                        .on("click",(e) => {
+                        $("#" + this.color).toggleClass("selected");
+                        this.color = color;
+                        $(e.target).toggleClass("selected");
+                    })
                     );
             });
             $("#" + this.color, $("#palettes")).toggleClass("selected");
@@ -104,22 +107,19 @@ module Gui {
     export class Visualizer {
         colors: string[];
         protected mat_layer: Layer<Mat<Rgb>> = new Layer<Mat<Rgb>>();
-        protected scribbles_layer: Layer<Array<Segments>> = new Layer<Array<Segments>>();
-        protected stroke_layer: Layer<Segments> = new Layer<Segments>();
+        protected scribbles_layer: Layer<Array<Cv.Segment[]>> = new Layer<Array<Cv.Segment[]>>();
+        protected stroke_layer: Layer<Cv.Segment[]> = new Layer<Cv.Segment[]>();
         protected direction_map_layer: Layer<Mat<Rgb>> = new Layer<Mat<Rgb>>();
         protected canvas: HTMLCanvasElement;
         protected context: CanvasRenderingContext2D;
 
-        restore(): void {
-            var mat: Mat<Rgb> = new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white);
-            this.stroke_layer.object.forEach((segment) => mat.draw(segment, Rgb.fromString(this.colors[segment.label()])));
-            var imageData: ImageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
-            Processor.restore(mat, this.direction_map_layer.object);
-            mat.copyTo(imageData);
-            this.context.putImageData(imageData, 0, 0);
+        setCanvas(element: HTMLCanvasElement): void {
+            this.canvas = element;
+            this.context = element.getContext("2d");
+            this.context.translate(0.5, 0.5);
         }
 
-        setObjects(mat: Mat<Rgb>, scribbles: Array<Segments>, stroke: Segments, directionMap: Mat<Rgb>): void {
+        setObjects(mat: Mat<Rgb>, scribbles: Array<Cv.Segment[]>, stroke: Cv.Segment[], directionMap: Mat<Rgb>): void {
             this.mat_layer.object = mat;
             this.scribbles_layer.object = scribbles;
             this.stroke_layer.object = stroke;
@@ -132,7 +132,7 @@ module Gui {
             this.stroke_layer.visible = $("#stroke").prop("checked");
             this.direction_map_layer.visible = $("#direction_map").prop("checked");
         }
-
+        
         update(): void {
             this.draw(new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white));
             if (this.direction_map_layer.visible) {
@@ -148,9 +148,18 @@ module Gui {
             }
         }
 
+        restore(): void {
+            var mat: Mat<Rgb> = new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white);
+            this.stroke_layer.object.forEach((segment) => mat.draw(segment, Rgb.fromString(this.colors[segment.label()])));
+            var imageData: ImageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+            Processor.restore(mat, this.direction_map_layer.object);
+            mat.copyTo(imageData);
+            this.context.putImageData(imageData, 0, 0);
+        }
+
         draw(mat: Mat<Rgb>): void;
-        draw(segments: Array<Segments>): void;
-        draw(segments: Segments): void;
+        draw(segments: Array<Cv.Segment[]>): void;
+        draw(segments: Cv.Segment[]): void;
         // Draw a line from previous to label
         draw(segment: Segment): void;
         // Dummy for overloading
@@ -181,17 +190,11 @@ module Gui {
             }
         }
 
-        setCanvas(element: HTMLCanvasElement): void {
-            this.canvas = element;
-            this.context = element.getContext("2d");
-            this.context.translate(0.5, 0.5);
-        }
-
         download(): void {
             location.href = this.canvas.toDataURL();
         }
 
-        getLabels(): number[]{
+        getLabels(): number[] {
             var labels: number[] = [];
             this.stroke_layer.object.forEach((segment) => labels.push(segment.label()));
             return labels;

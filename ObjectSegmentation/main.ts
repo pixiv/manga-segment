@@ -1,18 +1,15 @@
 ﻿/// <reference path="scripts/typings/jquery/jquery.d.ts" />
-/// <reference path="processor.ts" />
 /// <reference path="gui.ts" />
 /// <reference path="labeler.ts" />
 
 "use strict"
 
-import Processor = Core.Processor;
-import Rgb = Core.Rgb;
-import Label = Core.Label;
+import Processor = Cv.Processor;
 
 $(window).on("load",() => {
     var source: Mat<Rgb>;
-    var scribbles: Array<Segments> = new Array<Array<Segment>>();
-    var stroke: Segments = new Array<Segment>();
+    var scribbles: Array<Segment[]> = new Array<Array<Segment>>();
+    var stroke: Segment[] = new Array<Segment>();
     var stroke_file: string;
     var input_file: string;
     var colors: string[] = [];
@@ -47,7 +44,7 @@ $(window).on("load",() => {
     });
 
     if (stroke_file) {
-        $.getJSON("images/x_bin.js",(json) => Gui.Loader.json2stroke(stroke, json))
+        $.getJSON("images/x_bin.js",(json) => Gui.Converter.json2stroke(stroke, json))
             .done(() => {
             $("#stroke_text").text(JSON.stringify(stroke));
             visualizer.update();
@@ -55,7 +52,7 @@ $(window).on("load",() => {
     }
 
     if (input_file) {
-        $.getJSON("images/x_input.js",(json) => Gui.Loader.json2scribbles(scribbles, colors, json))
+        $.getJSON("images/x_input.js",(json) => Gui.Converter.json2scribbles(scribbles, colors, json))
             .done(() => {
             $("#scribble_text").text(JSON.stringify(scribbles));
             visualizer.update();
@@ -65,15 +62,16 @@ $(window).on("load",() => {
     $("#canvas").on({
         "mousemove": (e: JQueryEventObject) => {
             if (scribbler.drawing())
-                visualizer.draw(scribbler.move(Gui.convert(e)));
+                visualizer.draw(scribbler.move(Gui.Converter.jevent2point(e)));
         },
-        "mousedown": (e: JQueryEventObject) => scribbler.start(Gui.convert(e)),
+        "mousedown": (e: JQueryEventObject) => scribbler.start(Gui.Converter.jevent2point(e)),
         "mouseup mouseleave": () => {
             if (scribbler.drawing()) {
                 scribbler.end();
                 if (!calculating) {
                     calculating = true;
-                    Labeler.reset(stroke);
+                    for (var i in stroke)
+                        stroke[i].setLabel(Cv.None);
                     var nearestScribble: Labeler.NearestScribbles = new Labeler.NearestScribbles(scribbles, stroke);
                     nearestScribble.expandNearest(1000);
                     var smartScribble: Labeler.SmartScribbles = new Labeler.SmartScribbles(scribbles, nearestScribble.target);
