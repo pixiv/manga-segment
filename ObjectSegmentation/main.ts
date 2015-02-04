@@ -20,7 +20,7 @@ $(window).on("load",() => {
     visualizer.setCanvas(<HTMLCanvasElement> $("div#object_segmentation canvas")[0]);
 
     var image: HTMLImageElement = new Image();
-    image.src = "images/lovehina01_040_2_bin.png";
+    image.src = $("div#object_segmentation span").text();
 
     $(image).on("load",() => {
         var canvas = <HTMLCanvasElement> $("div#object_segmentation canvas")[0];

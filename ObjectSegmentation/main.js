@@ -15,7 +15,7 @@ $(window).on("load", function () {
     var visualizer = new Gui.Visualizer();
     visualizer.setCanvas($("div#object_segmentation canvas")[0]);
     var image = new Image();
-    image.src = "images/lovehina01_040_2_bin.png";
+    image.src = $("div#object_segmentation span").text();
     $(image).on("load", function () {
         var canvas = $("div#object_segmentation canvas")[0];
         canvas.width = image.width;
