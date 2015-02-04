@@ -1,380 +1,323 @@
-﻿"use strict"
-
-module Cv {
-
-    export type Label = number;
-    export var None: Label = -1;
-
-    interface IColor {
-    }
-
-    interface Color extends IColor {
-        new (values: number[]): Color;
-    }
-
-    export class Rgb implements IColor {
-        public static white = new Rgb([255, 255, 255]);
-        public static black = new Rgb([0, 0, 0]);
-        public static red = new Rgb([255, 0, 0]);
-        public static blue = new Rgb([0, 0, 255]);
-        public static lime = new Rgb([0, 255, 0]);
-        public static yellow = new Rgb([255, 255, 0]);
-        public static aqua = new Rgb([0, 255, 255]);
-        public static fuchsia = new Rgb([255, 0, 255]);
-        public static green = new Rgb([0, 128, 0]);
-        public static navy = new Rgb([0, 0, 128]);
-        public static standards = ['red', 'blue', 'lime', 'yellow', 'aqua', 'fuchsia', 'green', 'navy'];
-
-        public r: number;
-        public b: number;
-        public g: number;
-
-        constructor(values: number[]) {
+"use strict";
+var Cv;
+(function (Cv) {
+    Cv.None = -1;
+    var Rgb = (function () {
+        function Rgb(values) {
             this.r = values[0];
             this.g = values[1];
             this.b = values[2];
         }
-
-        is(rgb: Rgb): boolean {
+        Rgb.prototype.is = function (rgb) {
             return this.r == rgb.r && this.g == rgb.g && this.b == rgb.b;
-        }
-
+        };
         // Clone RGB
-        clone(): Rgb {
+        Rgb.prototype.clone = function () {
             return new Rgb([this.r, this.g, this.b]);
-        }
-
+        };
         // Add each value
-        add(color: Rgb): Rgb {
+        Rgb.prototype.add = function (color) {
             this.r += color.r;
             this.g += color.g;
             this.b += color.b;
             return this;
-        }
-
+        };
         // Subtract each value
-        sub(color: Rgb): Rgb {
+        Rgb.prototype.sub = function (color) {
             this.r -= color.r;
             this.g -= color.g;
             this.b -= color.b;
             return this;
-        }
-        
+        };
         // Multiply each value
-        multiply(num: number): Rgb {
+        Rgb.prototype.multiply = function (num) {
             this.r += num;
             this.g += num;
             this.b += num;
             return this;
-        }
-
-        static fromString(name: string): Rgb {
+        };
+        Rgb.fromString = function (name) {
             switch (name) {
-                case 'red': return Rgb.red; break;
-                case 'blue': return Rgb.blue; break;
-                case 'lime': return Rgb.lime; break;
-                case 'yellow': return Rgb.yellow; break;
-                case 'aqua': return Rgb.aqua; break;
-                case 'fuchsia': return Rgb.fuchsia; break;
-                case 'green': return Rgb.green; break;
-                case 'navy': return Rgb.navy; break;
+                case 'red':
+                    return Rgb.red;
+                    break;
+                case 'blue':
+                    return Rgb.blue;
+                    break;
+                case 'lime':
+                    return Rgb.lime;
+                    break;
+                case 'yellow':
+                    return Rgb.yellow;
+                    break;
+                case 'aqua':
+                    return Rgb.aqua;
+                    break;
+                case 'fuchsia':
+                    return Rgb.fuchsia;
+                    break;
+                case 'green':
+                    return Rgb.green;
+                    break;
+                case 'navy':
+                    return Rgb.navy;
+                    break;
             }
-        }
-    }
-
+        };
+        Rgb.white = new Rgb([255, 255, 255]);
+        Rgb.black = new Rgb([0, 0, 0]);
+        Rgb.red = new Rgb([255, 0, 0]);
+        Rgb.blue = new Rgb([0, 0, 255]);
+        Rgb.lime = new Rgb([0, 255, 0]);
+        Rgb.yellow = new Rgb([255, 255, 0]);
+        Rgb.aqua = new Rgb([0, 255, 255]);
+        Rgb.fuchsia = new Rgb([255, 0, 255]);
+        Rgb.green = new Rgb([0, 128, 0]);
+        Rgb.navy = new Rgb([0, 0, 128]);
+        Rgb.standards = ['red', 'blue', 'lime', 'yellow', 'aqua', 'fuchsia', 'green', 'navy'];
+        return Rgb;
+    })();
+    Cv.Rgb = Rgb;
     // 2D Point
-    export class Point {
-
-        public static Origin = new Point(0, 0);
-        public static Up = new Point(0, -1);
-        public static UpRight = new Point(1, -1);
-        public static Right = new Point(1, 0);
-        public static DownRight = new Point(1, 1);
-        public static Down = new Point(0, 1);
-        public static DownLeft = new Point(-1, 1);
-        public static Left = new Point(-1, 0);
-        public static UpLeft = new Point(-1, -1);
-        public static None = new Point(Infinity, Infinity);
-
-        constructor(public x: number, public y: number) {
+    var Point = (function () {
+        function Point(x, y) {
+            this.x = x;
+            this.y = y;
         }
-        
-        is(point: Point): boolean {
+        Point.prototype.is = function (point) {
             return this.x == point.x && this.y == point.y;
-        }
-
-        clone(): Point {
+        };
+        Point.prototype.clone = function () {
             return new Point(this.x, this.y);
-        }
-
+        };
         // Add each value
-        add(point: Point): Point {
+        Point.prototype.add = function (point) {
             this.x += point.x;
             this.y += point.y;
             return this;
-        }
-        
+        };
         // Subtract each value
-        sub(point: Point): Point {
+        Point.prototype.sub = function (point) {
             this.x -= point.x;
             this.y -= point.y;
             return this;
-        }
-
+        };
         // Multiply each value
-        multiply(scale: number): Point {
+        Point.prototype.multiply = function (scale) {
             this.x *= scale;
             this.y *= scale;
             return this;
-        }
-
-        innerProduct(vector: Point): number {
+        };
+        Point.prototype.innerProduct = function (vector) {
             return this.x * vector.x + this.y * vector.y;
-        }
-
+        };
         // Distance from the give point
-        norm(point: Point = Point.Origin): number {
+        Point.prototype.norm = function (point) {
+            if (point === void 0) { point = Point.Origin; }
             return Math.sqrt(Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2));
-        }
-
-        normalize(): Point {
+        };
+        Point.prototype.normalize = function () {
             return (this.norm() == 0) ? this : this.multiply(1 / this.norm());
-        }
-
-        toString(): string {
+        };
+        Point.prototype.toString = function () {
             return "(" + this.x + ", " + this.y + ")";
-        }
-    }
-
+        };
+        Point.Origin = new Point(0, 0);
+        Point.Up = new Point(0, -1);
+        Point.UpRight = new Point(1, -1);
+        Point.Right = new Point(1, 0);
+        Point.DownRight = new Point(1, 1);
+        Point.Down = new Point(0, 1);
+        Point.DownLeft = new Point(-1, 1);
+        Point.Left = new Point(-1, 0);
+        Point.UpLeft = new Point(-1, -1);
+        Point.None = new Point(Infinity, Infinity);
+        return Point;
+    })();
+    Cv.Point = Point;
     //セグメント
-    export class Segment {
-
-        protected _label: Label = None;
-
+    var Segment = (function () {
         // Initialized by a start point and an end point
-        constructor(public start: Point = Point.None, public end: Point = Point.None) {
+        function Segment(start, end) {
+            if (start === void 0) { start = Point.None; }
+            if (end === void 0) { end = Point.None; }
+            this.start = start;
+            this.end = end;
+            this._label = Cv.None;
         }
-
         // Center point
-        center(): Point {
+        Segment.prototype.center = function () {
             return this.start.clone().add(this.end).multiply(0.5);
-        }
-
-        direction(): Point {
+        };
+        Segment.prototype.direction = function () {
             return this.end.clone().sub(this.start).normalize();
-        }
-
-        label(): Label {
+        };
+        Segment.prototype.label = function () {
             return this._label;
-        }
-
-        labeled(): boolean {
-            return this._label != None;
-        }
-
-        setLabel(newLabel: Label): void {
+        };
+        Segment.prototype.labeled = function () {
+            return this._label != Cv.None;
+        };
+        Segment.prototype.setLabel = function (newLabel) {
             this._label = newLabel;
-        }
-
-        toString(): string {
+        };
+        Segment.prototype.toString = function () {
             return "[ " + this.start.toString() + " ~ " + this.end.toString() + ": " + this._label + " ]";
-        }
-
-    }
-
+        };
+        return Segment;
+    })();
+    Cv.Segment = Segment;
     // Image as a matrix
-    export class Mat<T extends IColor> {
-        public width: number;
-        public height: number;
-        // Pixel values
-        public data: Uint8Array;
-
-        protected point2Index(point: Point): number {
-            return point.y * this.width + point.x;
-        }
-
-        protected index2Point(index: number): Point {
-            return new Point(index % this.width,(index - index % this.width) / this.width);
-        }
-
-        constructor();
-        constructor(width: number, height: number, data: number[]);
-        constructor(width: number, height: number, value: T);
-        // Cast from ImageData
-        constructor(imageData: ImageData);
+    var Mat = (function () {
         // Dummy for overloading
-        constructor(arg1?: any, arg2?: number, arg3?: any) {
+        function Mat(arg1, arg2, arg3) {
             if (!arg1) {
                 this.width = 0;
                 this.height = 0;
-            } else if (arg1 instanceof ImageData) {
+            }
+            else if (arg1 instanceof ImageData) {
                 this.width = arg1.width;
                 this.height = arg1.height;
                 this.data = arg1.data;
-            } else if (arg3 instanceof Array) {
+            }
+            else if (arg3 instanceof Array) {
                 this.width = arg1;
                 this.height = arg2;
                 this.data = arg3;
-            } else {
+            }
+            else {
                 this.width = arg1;
                 this.height = arg2;
                 this.data = new Uint8Array(this.width * this.height * 4);
-                this.forPixels(this,() => arg3);
+                this.forPixels(this, function () { return arg3; });
             }
         }
-
-        clone(): Mat<T> {
-            var newData: number[] = [];
+        Mat.prototype.point2Index = function (point) {
+            return point.y * this.width + point.x;
+        };
+        Mat.prototype.index2Point = function (index) {
+            return new Point(index % this.width, (index - index % this.width) / this.width);
+        };
+        Mat.prototype.clone = function () {
+            var newData = [];
             for (var i = 0; i < this.data.length; i++)
                 newData.push(this.data[i]);
-            return new Mat<T>(this.width, this.height, newData);
-        }
-
+            return new Mat(this.width, this.height, newData);
+        };
         // Cast for ImageData
-        copyTo(imageData: ImageData): void {
+        Mat.prototype.copyTo = function (imageData) {
             for (var i = 0; i < this.data.length; i++)
                 imageData.data[i] = this.data[i];
-        }
-
-        isInside(point: Point): boolean {
+        };
+        Mat.prototype.isInside = function (point) {
             return 0 < point.x && 0 < point.y && point.x < this.width && point.y < this.height;
-        }
-
-        // The pixel value at the given point
-        at(point: Point): T;
-        // Set the pixel value to the given point
-        at(point: Point, value: T): void;
-        // The pixel value at the given index
-        at(index: number): T;
-        // Set the pixel value to the given index
-        at(index: number, value: T): void;
+        };
         // Dummy for overloading
-        at(arg1: any, arg2?: any): any {
+        Mat.prototype.at = function (arg1, arg2) {
             // if a point given, get index
-            var index: number = (arg1 instanceof Point) ? this.point2Index(arg1) : arg1;
+            var index = (arg1 instanceof Point) ? this.point2Index(arg1) : arg1;
             if (arg2 instanceof Rgb) {
                 // Set values
                 this.data[index * 4] = arg2.r;
                 this.data[index * 4 + 1] = arg2.g;
                 this.data[index * 4 + 2] = arg2.b;
                 this.data[index * 4 + 3] = 255;
-            } else {
+            }
+            else {
                 // Return values
                 return new Rgb([this.data[index * 4], this.data[index * 4 + 1], this.data[index * 4 + 2]]);
             }
-        }
-
+        };
         //Draw a segment by a color
-        draw(segment: Segment, value: T): void {
+        Mat.prototype.draw = function (segment, value) {
             var direction = segment.end.clone().sub(segment.start);
             direction.multiply(1 / (direction.x == 0 ? direction.y == 0 ? 1 : Math.abs(direction.y) : Math.abs(direction.x)));
-            for (var p: Point = segment.start.clone(); !p.is(segment.end); p.add(direction))
+            for (var p = segment.start.clone(); !p.is(segment.end); p.add(direction))
                 this.at(p, value);
             this.at(p, value);
-        }
-
-        // Apply a process to the image with raster scanning
-        forPixels(output: Mat<T>, handler: (value: T) => T): void;
-        forPixels(handler: (value: T) => void): void;
+        };
         // Dummy for overloading
-        forPixels(arg1: any, arg2?: any) {
+        Mat.prototype.forPixels = function (arg1, arg2) {
             if (arg1 instanceof Mat) {
                 for (var index = 0; index < this.width * this.height; index++)
                     arg1.at(index, arg2(this.at(index)));
-            } else {
+            }
+            else {
                 for (var index = 0; index < this.width * this.height; index++)
                     arg1(this.at(index));
             }
-        }
-
-        // Apply a process to the image with raster scanning
-        forPixelsWithPoint(output: Mat<T>, handler: (point: Point, value: T) => T): void;
-        forPixelsWithPoint(handler: (point: Point, value: T) => void): void;
+        };
         // Dummy for overloading
-        forPixelsWithPoint(arg1: any, arg2?: any) {
+        Mat.prototype.forPixelsWithPoint = function (arg1, arg2) {
             if (arg1 instanceof Mat) {
                 for (var index = 0; index < this.width * this.height; index++)
                     arg1.at(index, arg2(this.index2Point(index), this.at(index)));
-            } else {
+            }
+            else {
                 for (var index = 0; index < this.width * this.height; index++)
                     arg1(this.index2Point(index), this.at(index));
             }
-        }
-
+        };
         // Dummy for overloading
-        forInnerPixels(handler: (index: number) => void): void {
+        Mat.prototype.forInnerPixels = function (handler) {
             for (var index = this.width; index < this.width * this.height - this.width; index++)
                 if (0 < index % this.width && index % this.width < this.width - 1)
                     handler(index);
-        }
-
-        toString(): string {
+        };
+        Mat.prototype.toString = function () {
             var str = "";
             for (var i = 0; i < this.data.length; i++)
                 str += String(this.data[i]) + ", ";
             return str;
+        };
+        return Mat;
+    })();
+    Cv.Mat = Mat;
+    var Processor = (function () {
+        function Processor() {
         }
-
-    }
-
-    export class Processor {
-
         // Invert input to output
-        static invert(input: Mat<Rgb>, output: Mat<Rgb>) {
-            input.forPixels(output,(value: Rgb) => new Rgb([255 - value.r, 255 - value.g, 255 - value.b]));
-        }
-
+        Processor.invert = function (input, output) {
+            input.forPixels(output, function (value) { return new Rgb([255 - value.r, 255 - value.g, 255 - value.b]); });
+        };
         // Binarize input to output using threshold value
-        static binarize(input: Mat<Rgb>, output: Mat<Rgb>, threshold: number): void {
-            input.forPixels(output,(value: Rgb) => (value.r < threshold && value.g < threshold && value.b < threshold) ? Rgb.black : Rgb.white);
-        }
-
+        Processor.binarize = function (input, output, threshold) {
+            input.forPixels(output, function (value) { return (value.r < threshold && value.g < threshold && value.b < threshold) ? Rgb.black : Rgb.white; });
+        };
         // Convert input to output as a grayscale
-        static convertToGray(input: Mat<Rgb>, output: Mat<Rgb>) {
-            input.forPixels(output,(value: Rgb): Rgb => {
+        Processor.convertToGray = function (input, output) {
+            input.forPixels(output, function (value) {
                 var newValue = value.r * 0.2126 + value.g * 0.7152 + value.b * 0.0722;
                 return new Rgb([newValue, newValue, newValue]);
             });
-        }
-
+        };
         // Extract edges from input to output
-        static extractEdge(input: Mat<Rgb>, output: Mat<Rgb>) {
-            input.forPixelsWithPoint(output,(point: Point, value: Rgb): Rgb => {
-                return new Rgb([127, 127, 127])
-                    .sub(input.at(point.clone().add(Point.UpLeft)))
-                    .sub(input.at(point.clone().add(Point.Up)))
-                    .sub(input.at(point.clone().add(Point.UpRight)))
-                    .sub(input.at(point.clone().add(Point.Left)))
-                    .sub(value.clone().multiply(8))
-                    .sub(input.at(point.clone().add(Point.Right)))
-                    .sub(input.at(point.clone().add(Point.DownLeft)))
-                    .sub(input.at(point.clone().add(Point.Down)))
-                    .sub(input.at(point.clone().add(Point.DownRight)))
+        Processor.extractEdge = function (input, output) {
+            input.forPixelsWithPoint(output, function (point, value) {
+                return new Rgb([127, 127, 127]).sub(input.at(point.clone().add(Point.UpLeft))).sub(input.at(point.clone().add(Point.Up))).sub(input.at(point.clone().add(Point.UpRight))).sub(input.at(point.clone().add(Point.Left))).sub(value.clone().multiply(8)).sub(input.at(point.clone().add(Point.Right))).sub(input.at(point.clone().add(Point.DownLeft))).sub(input.at(point.clone().add(Point.Down))).sub(input.at(point.clone().add(Point.DownRight)));
             });
-        }
-
+        };
         // Thinning by Zhang-Suen
-        static thinning(input: Mat<Rgb>, output: Mat<Rgb>, directionMap: Mat<Rgb>) {
+        Processor.thinning = function (input, output, directionMap) {
             var w = input.width;
             var h = input.height;
             var outputData = output.data;
             var directionData = directionMap.data;
-            input.forPixels(output, value => value);
-            input.forPixels(directionMap, value => Rgb.white);
-            var rAry: boolean[] = [];
+            input.forPixels(output, function (value) { return value; });
+            input.forPixels(directionMap, function (value) { return Rgb.white; });
+            var rAry = [];
             var bFlag = true;
-
             for (var k = 0; bFlag; k++) {
                 bFlag = !!(k & 1);
-                for (var i: number = 0; i < outputData.length / 4; i++)
+                for (var i = 0; i < outputData.length / 4; i++)
                     rAry[i] = outputData[i * 4] == 0;
-                output.forInnerPixels((index) => {
+                output.forInnerPixels(function (index) {
                     if (!rAry[index])
                         return;
                     // [p[7] p[0] p[1]]
                     // [p[6] p[@] p[2]]
                     // [p[5] p[4] p[3]]
-                    var p: boolean[] = [];
+                    var p = [];
                     p[0] = rAry[index - w];
                     p[1] = rAry[index - w + 1];
                     p[2] = rAry[index + 1];
@@ -383,19 +326,18 @@ module Cv {
                     p[5] = rAry[index + w - 1];
                     p[6] = rAry[index - 1];
                     p[7] = rAry[index - w - 1];
-                    var a = p.filter((v, i) => !p[i] && p[i + 1 < 8 ? i + 1 : 0]).length;
-                    var b = p.filter(v => v).length;
+                    var a = p.filter(function (v, i) { return !p[i] && p[i + 1 < 8 ? i + 1 : 0]; }).length;
+                    var b = p.filter(function (v) { return v; }).length;
                     if (a == 1 && 2 <= b && b <= 6) {
-                        if ((!(k & 1) && !(p[0] && p[2] && p[4]) && !(p[2] && p[4] && p[6]))
-                            || ((k & 1) && !(p[0] && p[2] && p[6]) && !(p[0] && p[4] && p[6]))) {
+                        if ((!(k & 1) && !(p[0] && p[2] && p[4]) && !(p[2] && p[4] && p[6])) || ((k & 1) && !(p[0] && p[2] && p[6]) && !(p[0] && p[4] && p[6]))) {
                             outputData[index * 4] = outputData[index * 4 + 1] = outputData[index * 4 + 2] = 255;
                             bFlag = true;
                         }
                     }
                 });
-                for (var i: number = 0; i < outputData.length / 4; i++) {
+                for (var i = 0; i < outputData.length / 4; i++) {
                     if (rAry[i] == (outputData[i * 4] != 0)) {
-                        var p: boolean[] = [];
+                        var p = [];
                         p[0] = outputData[(i - w) * 4] == 0;
                         p[1] = outputData[(i - w + 1) * 4] == 0;
                         p[2] = outputData[(i + 1) * 4] == 0;
@@ -409,17 +351,17 @@ module Cv {
                     }
                 }
             }
-        }
-
+        };
         // Restore labels by a thinning direction map
-        static restore(source: Mat<Rgb>, directionMap: Mat<Rgb>) {
-            var nonvalid: Point[] = [];
-            directionMap.forPixelsWithPoint((point, direction) => {
+        Processor.restore = function (source, directionMap) {
+            var _this = this;
+            var nonvalid = [];
+            directionMap.forPixelsWithPoint(function (point, direction) {
                 if (direction.r < 8 && source.at(point).is(Rgb.white)) {
                     var p = point.clone();
                     var distColor = Rgb.white;
                     while (distColor.is(Rgb.white)) {
-                        var nextDirectionPoint = this.direction2point(directionMap.at(p).r);
+                        var nextDirectionPoint = _this.direction2point(directionMap.at(p).r);
                         if (nextDirectionPoint.is(Point.None)) {
                             nonvalid.push(p);
                             return;
@@ -430,15 +372,14 @@ module Cv {
                             var p2 = point.clone();
                             while (source.at(p2).is(Rgb.white)) {
                                 source.at(p2, distColor);
-                                p2.add(this.direction2point(directionMap.at(p2).r));
+                                p2.add(_this.direction2point(directionMap.at(p2).r));
                             }
                         }
                     }
                 }
             });
-        }
-
-        protected static direction2point(direction: number): Point {
+        };
+        Processor.direction2point = function (direction) {
             switch (direction) {
                 case 0: return Point.Up;
                 case 1: return Point.UpRight;
@@ -450,16 +391,15 @@ module Cv {
                 case 7: return Point.UpLeft;
                 default: return Point.None;
             }
-        }
-
+        };
         // Vectorize input
-        static vectorize(mat: Mat<Rgb>, segments: Array<Segment>) {
-            var directions: Array<Point> = [Point.Right, Point.DownRight, Point.Down, Point.DownLeft];
+        Processor.vectorize = function (mat, segments) {
+            var directions = [Point.Right, Point.DownRight, Point.Down, Point.DownLeft];
             var remaining = mat.clone();
-            remaining.forPixelsWithPoint((start: Point, value: Rgb) => {
+            remaining.forPixelsWithPoint(function (start, value) {
                 if (remaining.at(start).is(Rgb.black)) {
                     var found = false;
-                    directions.forEach((direction) => {
+                    directions.forEach(function (direction) {
                         var end = start.clone();
                         remaining.at(end, Rgb.black);
                         while (remaining.at(end).is(Rgb.black)) {
@@ -478,8 +418,9 @@ module Cv {
                         segments.push(new Segment(start, start));
                 }
             });
-        }
-
-    }
-
-}
+        };
+        return Processor;
+    })();
+    Cv.Processor = Processor;
+})(Cv || (Cv = {}));
+//# sourceMappingURL=cv.js.map

@@ -1,146 +1,128 @@
-﻿/// <reference path="cv.ts" />
-
-"use strict"
-
-import Rgb = Cv.Rgb;
-import Mat = Cv.Mat;
-import Segment = Cv.Segment;
-
-module Gui {
-
-    export class Converter {
-
-        static jevent2point(jpoint: JQueryEventObject): Cv.Point {
-            return new Cv.Point(Math.round(jpoint.clientX), Math.round(jpoint.clientY));
+/// <reference path="cv.ts" />
+"use strict";
+var Rgb = Cv.Rgb;
+var Mat = Cv.Mat;
+var Segment = Cv.Segment;
+var Gui;
+(function (Gui) {
+    var Converter = (function () {
+        function Converter() {
         }
-
-        static json2stroke(stroke: Cv.Segment[], json: any) {
+        Converter.jevent2point = function (jpoint) {
+            return new Cv.Point(Math.round(jpoint.clientX), Math.round(jpoint.clientY));
+        };
+        Converter.json2stroke = function (stroke, json) {
             stroke.length = 0;
             for (var member in json) {
                 stroke.push(new Segment());
                 Gui.Converter.extend(stroke[stroke.length - 1], json[member]);
             }
-        }
-
-        static json2scribbles(scribbles: Array<Cv.Segment[]>, colors: string[], json: any) {
+        };
+        Converter.json2scribbles = function (scribbles, colors, json) {
             colors.length = 0;
             scribbles.length = 0;
             for (var member in json) {
                 colors.push(Rgb.standards[member]);
-                scribbles.push(new Array<Segment>());
+                scribbles.push(new Array());
                 for (var submember in json[member]) {
                     var back = scribbles[scribbles.length - 1];
                     back.push(new Segment());
                     this.extend(back[back.length - 1], json[member][submember]);
                 }
             }
-        }
-
-        protected static extend(target: any, source: any) {
+        };
+        Converter.extend = function (target, source) {
             for (var member in source)
                 if (typeof source[member] == "object")
                     this.extend(target[member], source[member]);
                 else
                     target[member] = source[member];
+        };
+        return Converter;
+    })();
+    Gui.Converter = Converter;
+    var Scribbler = (function () {
+        function Scribbler(scribbles, colors) {
+            this.scribbles = scribbles;
+            this.colors = colors;
+            this.color = Cv.Rgb.standards[0];
+            this.previous = null;
+            this.currentLabel = 0;
         }
-
-    }
-
-    export class Scribbler {
-        protected color: string = Cv.Rgb.standards[0];
-        protected previous: Cv.Point = null;
-        protected currentLabel: Cv.Label = 0;
-
-        constructor(protected scribbles: Array<Cv.Segment[]>, protected colors: string[]) {
-        }
-
-        drawing(): boolean {
+        Scribbler.prototype.drawing = function () {
             return this.previous != null;
-        }
-
-        move(next: Cv.Point): Segment {
+        };
+        Scribbler.prototype.move = function (next) {
             var newSegment = new Segment(this.previous, next);
             newSegment.setLabel(this.currentLabel);
             this.scribbles[this.currentLabel].push(newSegment);
             this.previous = next;
             return newSegment;
-        }
-
-        start(point: Cv.Point): void {
+        };
+        Scribbler.prototype.start = function (point) {
             if (!this.colors || this.colors.indexOf(this.color) == -1) {
                 this.colors.push(this.color);
                 this.scribbles.push([]);
             }
             this.currentLabel = this.colors.indexOf(this.color);
             this.previous = point;
-        }
-
-        end(): void {
+        };
+        Scribbler.prototype.end = function () {
             this.previous = null;
-        }
-
-        label(): Cv.Label {
+        };
+        Scribbler.prototype.label = function () {
             return this.currentLabel;
-        }
-
-        createPalettes(): void {
-            Cv.Rgb.standards.forEach((color) => {
-                $("#palettes").append(
-                    $("<span/>")
-                        .attr("id", color)
-                        .css("background-color", color)
-                        .on("click",(e) => {
-                        $("#" + this.color).toggleClass("selected");
-                        this.color = color;
-                        $(e.target).toggleClass("selected");
-                    })
-                    );
+        };
+        Scribbler.prototype.createPalettes = function () {
+            var _this = this;
+            Cv.Rgb.standards.forEach(function (color) {
+                $("#palettes").append($("<span/>").attr("id", color).css("background-color", color).on("click", function (e) {
+                    $("#" + _this.color).toggleClass("selected");
+                    _this.color = color;
+                    $(e.target).toggleClass("selected");
+                }));
             });
             $("#" + this.color, $("#palettes")).toggleClass("selected");
+        };
+        return Scribbler;
+    })();
+    Gui.Scribbler = Scribbler;
+    var Layer = (function () {
+        function Layer() {
         }
-
-    }
-
-    class Layer<T> {
-        object: T;
-        visible: boolean;
-    }
-
-    export class Visualizer {
-        colors: string[];
-        protected mat_layer: Layer<Mat<Rgb>> = new Layer<Mat<Rgb>>();
-        protected scribbles_layer: Layer<Array<Cv.Segment[]>> = new Layer<Array<Cv.Segment[]>>();
-        protected stroke_layer: Layer<Cv.Segment[]> = new Layer<Cv.Segment[]>();
-        protected direction_map_layer: Layer<Mat<Rgb>> = new Layer<Mat<Rgb>>();
-        protected canvas: HTMLCanvasElement;
-        protected context: CanvasRenderingContext2D;
-
-        setCanvas(element: HTMLCanvasElement): void {
+        return Layer;
+    })();
+    var Visualizer = (function () {
+        function Visualizer() {
+            this.mat_layer = new Layer();
+            this.scribbles_layer = new Layer();
+            this.stroke_layer = new Layer();
+            this.direction_map_layer = new Layer();
+        }
+        Visualizer.prototype.setCanvas = function (element) {
             this.canvas = element;
             this.context = element.getContext("2d");
             this.context.translate(0.5, 0.5);
-        }
-
-        setObjects(mat: Mat<Rgb>, scribbles: Array<Cv.Segment[]>, stroke: Cv.Segment[], directionMap: Mat<Rgb>): void {
+        };
+        Visualizer.prototype.setObjects = function (mat, scribbles, stroke, directionMap) {
             this.mat_layer.object = mat;
             this.scribbles_layer.object = scribbles;
             this.stroke_layer.object = stroke;
             this.direction_map_layer.object = directionMap;
-        }
-
-        setVisibility(): void {
+        };
+        Visualizer.prototype.setVisibility = function () {
             this.mat_layer.visible = $("#source").prop("checked");
             this.scribbles_layer.visible = $("#scribbles").prop("checked");
             this.stroke_layer.visible = $("#stroke").prop("checked");
             this.direction_map_layer.visible = $("#direction_map").prop("checked");
-        }
-        
-        update(): void {
+        };
+        Visualizer.prototype.update = function () {
             this.draw(new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white));
             if (this.direction_map_layer.visible) {
-                var mat: Mat<Rgb> = new Mat<Rgb>();
-                this.direction_map_layer.object.forPixelsWithPoint(mat,(point, rgb) => Rgb.fromString(Rgb.standards[rgb.r]));
-            } else {
+                var mat = new Mat();
+                this.direction_map_layer.object.forPixelsWithPoint(mat, function (point, rgb) { return Rgb.fromString(Rgb.standards[rgb.r]); });
+            }
+            else {
                 if (this.mat_layer.visible)
                     this.draw(this.mat_layer.object);
                 if (this.scribbles_layer.visible)
@@ -148,38 +130,34 @@ module Gui {
                 if (this.stroke_layer.visible)
                     this.draw(this.stroke_layer.object);
             }
-        }
-
-        restore(): void {
-            var mat: Mat<Rgb> = new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white);
-            this.stroke_layer.object.forEach((segment) => mat.draw(segment, Rgb.fromString(this.colors[segment.label()])));
-            var imageData: ImageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        };
+        Visualizer.prototype.restore = function () {
+            var _this = this;
+            var mat = new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white);
+            this.stroke_layer.object.forEach(function (segment) { return mat.draw(segment, Rgb.fromString(_this.colors[segment.label()])); });
+            var imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
             Processor.restore(mat, this.direction_map_layer.object);
             mat.copyTo(imageData);
             this.context.putImageData(imageData, 0, 0);
-        }
-
-        draw(mat: Mat<Rgb>): void;
-        draw(segments: Array<Cv.Segment[]>): void;
-        draw(segments: Cv.Segment[]): void;
-        // Draw a line from previous to label
-        draw(segment: Segment): void;
+        };
         // Dummy for overloading
-        draw(arg: any): void {
+        Visualizer.prototype.draw = function (arg) {
+            var _this = this;
             if (arg instanceof Array) {
-                arg.forEach((element: any) => {
-                    this.draw(element);
+                arg.forEach(function (element) {
+                    _this.draw(element);
                 });
-            } else if (arg instanceof Mat) {
-                var mat: Mat<Rgb> = arg;
+            }
+            else if (arg instanceof Mat) {
+                var mat = arg;
                 this.canvas.width = mat.width;
                 this.canvas.height = mat.height;
-                var imageData: ImageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                var imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
                 mat.copyTo(imageData);
                 this.context.putImageData(imageData, 0, 0);
             }
             else if (arg instanceof Segment) {
-                var segment: Segment = arg;
+                var segment = arg;
                 if (segment) {
                     this.context.strokeStyle = (segment.label() < 0) ? 'black' : this.colors[segment.label()];
                     this.context.lineWidth = 1;
@@ -190,18 +168,17 @@ module Gui {
                     this.context.closePath();
                 }
             }
-        }
-
-        download(): void {
+        };
+        Visualizer.prototype.download = function () {
             location.href = this.canvas.toDataURL();
-        }
-
-        getLabels(): number[] {
-            var labels: number[] = [];
-            this.stroke_layer.object.forEach((segment) => labels.push(segment.label()));
+        };
+        Visualizer.prototype.getLabels = function () {
+            var labels = [];
+            this.stroke_layer.object.forEach(function (segment) { return labels.push(segment.label()); });
             return labels;
-        }
-
-    }
-
-}
+        };
+        return Visualizer;
+    })();
+    Gui.Visualizer = Visualizer;
+})(Gui || (Gui = {}));
+//# sourceMappingURL=gui.js.map
