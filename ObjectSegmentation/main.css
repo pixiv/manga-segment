@@ -1,12 +1,4 @@
-﻿* {
-    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-}
-
-body {
-    background-color: seashell;
-}
-
-div#object_segmentation canvas {
+﻿div#object_segmentation canvas {
     float: left;
 }
 
@@ -22,19 +14,19 @@ div#object_segmentation div span {
     height: 60px;
 }
 
-form {
-    clear: both;
-}
-
-span:not(.selected) {
+div#object_segmentation div span:not(.selected) {
     border: 2px solid white;
 }
 
-span.selected {
+div#object_segmentation div span.selected {
     border: 2px solid black;
 }
 
-fieldset.displaying button {
+form#layers {
+    clear: both;
+}
+
+form#layers fieldset.displaying button {
     background-color: skyblue;
     border: 1px solid gray;
     height: 30px;
