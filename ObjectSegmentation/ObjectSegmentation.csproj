@@ -33,11 +33,11 @@
     <Content Include="Scripts\jquery-2.1.1.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="cv.ts" />
-    <TypeScriptCompile Include="gui.ts" />
-    <TypeScriptCompile Include="main.ts" />
-    <TypeScriptCompile Include="optimizer.ts" />
-    <TypeScriptCompile Include="labeler.ts" />
+    <TypeScriptCompile Include="Scripts\cv.ts" />
+    <TypeScriptCompile Include="Scripts\gui.ts" />
+    <TypeScriptCompile Include="Scripts\labeler.ts" />
+    <TypeScriptCompile Include="Scripts\main.ts" />
+    <TypeScriptCompile Include="Scripts\optimizer.ts" />
     <TypeScriptCompile Include="Scripts\typings\jquery\jquery.d.ts" />
   </ItemGroup>
   <ItemGroup>

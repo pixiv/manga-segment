@@ -70,6 +70,7 @@ module Cv {
 
         static fromString(name: string): Rgb {
             switch (name) {
+                case 'black': return Rgb.black; break;
                 case 'red': return Rgb.red; break;
                 case 'blue': return Rgb.blue; break;
                 case 'lime': return Rgb.lime; break;

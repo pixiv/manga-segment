@@ -11,15 +11,17 @@ module Labeler {
     var Features: Array<Feature> = [Feature.Proximity, Feature.Direction];
 
     class Parameters {
-        default_energy: number = 0.0001;
-        ramda: number = 4; // The ratio between Data term and Smoothing term
+        expandingStep = 5;
+        default_energy: number = 0.001;
+        ramda: number = 4; // The ratio between Data term and Smoothness term
         feature_on: boolean[] = [true, true]; // Whether the feature is enabled
         sigma_smooth: number[] = [10, 0.1]; // Sigma for smoothing term
         sigma_data: number[] = [90, 0.3]; // Sigma for data term
         max_prox: number; // The max distance between any two segmnets
     }
 
-    export class NearestScribbles {
+    export class FirstStep {
+        protected parameters: Parameters = new Parameters;
         public target: Cv.Segment[];
         nearests: Cv.Segment[];
 
@@ -30,9 +32,9 @@ module Labeler {
             }
         }
 
-        expandNearest(maxSegmentsNum: number) {
-            this.setNearests();
-            for (var offset = 5; maxSegmentsNum < this.target.length; offset += 5)
+        expandAreaUntil(maxSegmentsNum: number) {
+            this.setLabels();
+            for (var offset = this.parameters.expandingStep; maxSegmentsNum < this.target.length; offset += this.parameters.expandingStep)
                 for (var i = 0; i < this.target.length; i++) {
                     if (this.target[i].center().norm(this.nearests[i].center()) < offset) {
                         this.target[i].setLabel(this.nearests[i].label());
@@ -42,7 +44,7 @@ module Labeler {
                 }
         }
 
-        setNearests(): void {
+        setLabels(): void {
             this.nearests = [];
             for (var i = 0; i < this.target.length; i++) {
                 var targetSegment = this.target[i];
@@ -62,7 +64,7 @@ module Labeler {
         }
     }
 
-    export class SmartScribbles {
+    export class SecondStep {
         protected parameters: Parameters = new Parameters;
         protected firstTIme = true;
         protected NODENUM: number;
@@ -74,7 +76,7 @@ module Labeler {
         constructor(protected seeds: Array<Cv.Segment[]>, protected target: Array<Segment>) {
         }
 
-        run() {
+        setLabels() {
             this.parameters.max_prox = this.parameters.sigma_smooth[<number>Feature.Proximity] * Math.sqrt(Math.log(this.parameters.default_energy * this.parameters.sigma_smooth[<number>Feature.Proximity]));
             this.NODENUM = this.target.length + 2;
             this.SOURCE = this.target.length;

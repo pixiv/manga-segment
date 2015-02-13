@@ -6,22 +6,22 @@
     <title>Object Segmentation</title>
     <link rel="stylesheet" href="index.css" />
     <script src="Scripts/jquery-2.1.1.js"></script>
-    <script src="cv.js"></script>
-    <script src="optimizer.js"></script>
-    <script src="labeler.js"></script>
-    <script src="gui.js"></script>
-    <script src="main.js"></script>
+    <script src="Scripts/cv.js"></script>
+    <script src="Scripts/optimizer.js"></script>
+    <script src="Scripts/labeler.js"></script>
+    <script src="Scripts/gui.js"></script>
+    <script src="Scripts/main.js"></script>
 </head>
 
 <body>
 
 <div id="object_segmentation">
-    <span hidden="hidden">ImageURLHere</span>
+    <span hidden="hidden">images/sample.png</span>
     <canvas></canvas>
     <div></div>
 </div>
 
-<form method="post" action="javascript:void(0);">
+<form id ="layers" method="post" action="javascript:void(0);">
     <fieldset class="displaying">
         <legend>Layers</legend>
         <input type="checkbox" id="visible_source" checked="checked" /><label for="visible_source">Source</label>

@@ -1,4 +1,4 @@
-﻿/// <reference path="scripts/typings/jquery/jquery.d.ts" />
+﻿/// <reference path="typings/jquery/jquery.d.ts" />
 /// <reference path="gui.ts" />
 /// <reference path="labeler.ts" />
 
@@ -6,8 +6,8 @@
 
 $(window).on("load",() => {
     var source: Mat<Rgb>;
-    var scribbles: Array<Segment[]> = new Array<Array<Segment>>();
-    var stroke: Segment[] = new Array<Segment>();
+    var scribbles: Array<Segment[]> = [];
+    var stroke: Segment[] = [];
     var stroke_file: string;
     var input_file: string;
     var colors: string[] = [];
@@ -35,7 +35,6 @@ $(window).on("load",() => {
         Cv.Processor.thinning(thinned, thinned, directionMap);
         Cv.Processor.vectorize(thinned, stroke);
         visualizer.setObjects(source, scribbles, stroke, directionMap);
-        visualizer.setVisibility();
         visualizer.colors = colors;
         visualizer.update();
     });
@@ -67,35 +66,18 @@ $(window).on("load",() => {
                     calculating = true;
                     for (var i in stroke)
                         stroke[i].setLabel(Cv.None);
-                    var nearestScribble: Labeler.NearestScribbles = new Labeler.NearestScribbles(scribbles, stroke);
-                    nearestScribble.expandNearest(1000);
-                    var smartScribble: Labeler.SmartScribbles = new Labeler.SmartScribbles(scribbles, nearestScribble.target);
-                    smartScribble.run();
+                    var firstStep = new Labeler.FirstStep(scribbles, stroke);
+                    firstStep.expandAreaUntil(700);
+                    var secondStep = new Labeler.SecondStep(scribbles, firstStep.target);
+                    secondStep.setLabels();
                     visualizer.update();
-                    visualizer.restore();
                     calculating = false;
                 }
             }
         }
     });
 
-    $("input#visible_source").on("click",() => {
-        visualizer.setVisibility();
-        visualizer.update();
-    });
-
-    $("input#visible_scribbles").on("click",() => {
-        visualizer.setVisibility();
-        visualizer.update();
-    });
-
-    $("input#visible_stroke").on("click",() => {
-        visualizer.setVisibility();
-        visualizer.update();
-    });
-
-    $("input#visible_direction_map").on("click",() => {
-        visualizer.setVisibility();
+    $("form#layers input").on("click",() => {
         visualizer.update();
     });
 

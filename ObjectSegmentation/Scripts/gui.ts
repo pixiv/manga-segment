@@ -101,17 +101,12 @@ module Gui {
 
     }
 
-    class Layer<T> {
-        object: T;
-        visible: boolean;
-    }
-
     export class Visualizer {
         colors: string[];
-        protected mat_layer: Layer<Mat<Rgb>> = new Layer<Mat<Rgb>>();
-        protected scribbles_layer: Layer<Array<Cv.Segment[]>> = new Layer<Array<Cv.Segment[]>>();
-        protected stroke_layer: Layer<Cv.Segment[]> = new Layer<Cv.Segment[]>();
-        protected direction_map_layer: Layer<Mat<Rgb>> = new Layer<Mat<Rgb>>();
+        protected mat: Mat<Rgb>;
+        protected scribbles: Array<Cv.Segment[]> = [];
+        protected stroke: Cv.Segment[] = [];
+        protected direction_map: Mat<Rgb> = new Mat<Rgb>();
         protected canvas: HTMLCanvasElement;
         protected context: CanvasRenderingContext2D;
 
@@ -122,39 +117,35 @@ module Gui {
         }
 
         setObjects(mat: Mat<Rgb>, scribbles: Array<Cv.Segment[]>, stroke: Cv.Segment[], directionMap: Mat<Rgb>): void {
-            this.mat_layer.object = mat;
-            this.scribbles_layer.object = scribbles;
-            this.stroke_layer.object = stroke;
-            this.direction_map_layer.object = directionMap;
+            this.mat = mat;
+            this.scribbles = scribbles;
+            this.stroke = stroke;
+            this.direction_map = directionMap;
         }
 
-        setVisibility(): void {
-            this.mat_layer.visible = $("#visible_source").prop("checked");
-            this.scribbles_layer.visible = $("#visible_scribbles").prop("checked");
-            this.stroke_layer.visible = $("#visible_stroke").prop("checked");
-            this.direction_map_layer.visible = $("#visible_direction_map").prop("checked");
-        }
-        
         update(): void {
-            this.draw(new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white));
-            if (this.direction_map_layer.visible) {
+            this.draw(new Mat(this.mat.width, this.mat.height, Rgb.white));
+            if ($("#visible_direction_map").prop("checked")) {
                 var mat: Mat<Rgb> = new Mat<Rgb>();
-                this.direction_map_layer.object.forPixelsWithPoint(mat,(point, rgb) => Rgb.fromString(Rgb.standards[rgb.r]));
+                this.direction_map.forPixelsWithPoint(mat,(point, rgb) => Rgb.fromString(Rgb.standards[rgb.r]));
+                this.draw(this.direction_map);
             } else {
-                if (this.mat_layer.visible)
-                    this.draw(this.mat_layer.object);
-                if (this.scribbles_layer.visible)
-                    this.draw(this.scribbles_layer.object);
-                if (this.stroke_layer.visible)
-                    this.draw(this.stroke_layer.object);
+                if ($("#visible_result").prop("checked"))
+                    this.restore();
+                else if ($("#visible_source").prop("checked"))
+                    this.draw(this.mat);
+                else if ($("#visible_stroke").prop("checked"))
+                    this.draw(this.stroke);
+                if ($("#visible_scribbles").prop("checked"))
+                    this.draw(this.scribbles);
             }
         }
 
         restore(): void {
-            var mat: Mat<Rgb> = new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white);
-            this.stroke_layer.object.forEach((segment) => mat.draw(segment, Rgb.fromString(this.colors[segment.label()])));
+            var mat: Mat<Rgb> = new Mat(this.mat.width, this.mat.height, Rgb.white);
+            this.stroke.forEach((segment) => mat.draw(segment, Rgb.fromString((segment.label() < 0) ? 'black' : this.colors[segment.label()])));
             var imageData: ImageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
-            Cv.Processor.restore(mat, this.direction_map_layer.object);
+            Cv.Processor.restore(mat, this.direction_map);
             mat.copyTo(imageData);
             this.context.putImageData(imageData, 0, 0);
         }
@@ -162,7 +153,6 @@ module Gui {
         draw(mat: Mat<Rgb>): void;
         draw(segments: Array<Cv.Segment[]>): void;
         draw(segments: Cv.Segment[]): void;
-        // Draw a line from previous to label
         draw(segment: Segment): void;
         // Dummy for overloading
         draw(arg: any): void {
@@ -198,7 +188,7 @@ module Gui {
 
         getLabels(): number[] {
             var labels: number[] = [];
-            this.stroke_layer.object.forEach((segment) => labels.push(segment.label()));
+            this.stroke.forEach((segment) => labels.push(segment.label()));
             return labels;
         }
 
