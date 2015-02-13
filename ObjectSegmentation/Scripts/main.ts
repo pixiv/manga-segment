@@ -56,9 +56,9 @@ $(window).on("load",() => {
     $("div#object_segmentation canvas").on({
         "mousemove": (e: JQueryEventObject) => {
             if (scribbler.drawing())
-                visualizer.draw(scribbler.move(Gui.Converter.jevent2point(e)));
+                visualizer.draw(scribbler.move(Gui.Converter.jevent2point(e, $("div#object_segmentation canvas").offset())));
         },
-        "mousedown": (e: JQueryEventObject) => scribbler.start(Gui.Converter.jevent2point(e)),
+        "mousedown": (e: JQueryEventObject) => scribbler.start(Gui.Converter.jevent2point(e, $("div#object_segmentation canvas").offset())),
         "mouseup mouseleave": () => {
             if (scribbler.drawing()) {
                 scribbler.end();

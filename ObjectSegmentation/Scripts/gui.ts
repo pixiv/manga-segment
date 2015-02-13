@@ -10,8 +10,8 @@ module Gui {
 
     export class Converter {
 
-        static jevent2point(jpoint: JQueryEventObject): Cv.Point {
-            return new Cv.Point(Math.round(jpoint.clientX), Math.round(jpoint.clientY));
+        static jevent2point(jpoint: JQueryEventObject, offset: JQueryCoordinates): Cv.Point {
+            return new Cv.Point(Math.round(jpoint.pageX - offset.left), Math.round(jpoint.pageY - offset.top));
         }
 
         static json2stroke(stroke: Cv.Segment[], json: any) {

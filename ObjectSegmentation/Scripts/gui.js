@@ -8,8 +8,8 @@ var Gui;
     var Converter = (function () {
         function Converter() {
         }
-        Converter.jevent2point = function (jpoint) {
-            return new Cv.Point(Math.round(jpoint.clientX), Math.round(jpoint.clientY));
+        Converter.jevent2point = function (jpoint, offset) {
+            return new Cv.Point(Math.round(jpoint.pageX - offset.left), Math.round(jpoint.pageY - offset.top));
         };
         Converter.json2stroke = function (stroke, json) {
             stroke.length = 0;
