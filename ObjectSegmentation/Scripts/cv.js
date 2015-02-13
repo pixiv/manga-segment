@@ -11,25 +11,21 @@ var Cv;
         Rgb.prototype.is = function (rgb) {
             return this.r == rgb.r && this.g == rgb.g && this.b == rgb.b;
         };
-        // Clone RGB
         Rgb.prototype.clone = function () {
             return new Rgb([this.r, this.g, this.b]);
         };
-        // Add each value
         Rgb.prototype.add = function (color) {
             this.r += color.r;
             this.g += color.g;
             this.b += color.b;
             return this;
         };
-        // Subtract each value
         Rgb.prototype.sub = function (color) {
             this.r -= color.r;
             this.g -= color.g;
             this.b -= color.b;
             return this;
         };
-        // Multiply each value
         Rgb.prototype.multiply = function (num) {
             this.r += num;
             this.g += num;
@@ -81,7 +77,6 @@ var Cv;
         return Rgb;
     })();
     Cv.Rgb = Rgb;
-    // 2D Point
     var Point = (function () {
         function Point(x, y) {
             this.x = x;
@@ -93,19 +88,16 @@ var Cv;
         Point.prototype.clone = function () {
             return new Point(this.x, this.y);
         };
-        // Add each value
         Point.prototype.add = function (point) {
             this.x += point.x;
             this.y += point.y;
             return this;
         };
-        // Subtract each value
         Point.prototype.sub = function (point) {
             this.x -= point.x;
             this.y -= point.y;
             return this;
         };
-        // Multiply each value
         Point.prototype.multiply = function (scale) {
             this.x *= scale;
             this.y *= scale;
@@ -114,12 +106,10 @@ var Cv;
         Point.prototype.innerProduct = function (vector) {
             return this.x * vector.x + this.y * vector.y;
         };
-        // Distance from the give point
         Point.prototype.norm = function (point) {
             if (point === void 0) { point = Point.Origin; }
             return Math.sqrt(Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2));
         };
-        // Normalize to 1-length Point
         Point.prototype.normalize = function () {
             return (this.norm() == 0) ? this : this.multiply(1 / this.norm());
         };
@@ -139,9 +129,7 @@ var Cv;
         return Point;
     })();
     Cv.Point = Point;
-    //セグメント
     var Segment = (function () {
-        // Initialized by a start point and an end point
         function Segment(start, end) {
             if (start === void 0) { start = Point.None; }
             if (end === void 0) { end = Point.None; }
@@ -149,7 +137,6 @@ var Cv;
             this.end = end;
             this._label = Cv.None;
         }
-        // Center point
         Segment.prototype.center = function () {
             return this.start.clone().add(this.end).multiply(0.5);
         };
@@ -171,9 +158,7 @@ var Cv;
         return Segment;
     })();
     Cv.Segment = Segment;
-    // Image as a matrix
     var Mat = (function () {
-        // Dummy for overloading
         function Mat(arg1, arg2, arg3) {
             if (!arg1) {
                 this.width = 0;
@@ -208,14 +193,12 @@ var Cv;
         Mat.prototype.index2Point = function (index) {
             return new Point(index % this.width, (index - index % this.width) / this.width);
         };
-        // Create a new Mat and copy the data
         Mat.prototype.clone = function () {
             var newData = [];
             for (var i = 0; i < this.data.length; i++)
                 newData.push(this.data[i]);
             return new Mat(this.width, this.height, newData);
         };
-        // Cast for ImageData
         Mat.prototype.copyTo = function (imageData) {
             for (var i = 0; i < this.data.length; i++)
                 imageData.data[i] = this.data[i];
@@ -223,23 +206,18 @@ var Cv;
         Mat.prototype.isInside = function (point) {
             return 0 < point.x && 0 < point.y && point.x < this.width && point.y < this.height;
         };
-        // Dummy for overloading
         Mat.prototype.at = function (arg1, arg2) {
-            // if a point given, get index
             var index = (arg1 instanceof Point) ? this.point2Index(arg1) : arg1;
             if (arg2 instanceof Rgb) {
-                // Set values
                 this.data[index * 4] = arg2.r;
                 this.data[index * 4 + 1] = arg2.g;
                 this.data[index * 4 + 2] = arg2.b;
                 this.data[index * 4 + 3] = 255;
             }
             else {
-                // Return values
                 return new Rgb([this.data[index * 4], this.data[index * 4 + 1], this.data[index * 4 + 2]]);
             }
         };
-        //Draw a segment by a color
         Mat.prototype.draw = function (segment, value) {
             var direction = segment.end.clone().sub(segment.start);
             direction.multiply(1 / (direction.x == 0 ? direction.y == 0 ? 1 : Math.abs(direction.y) : Math.abs(direction.x)));
@@ -247,7 +225,6 @@ var Cv;
                 this.at(p, value);
             this.at(p, value);
         };
-        // Dummy for overloading
         Mat.prototype.forPixels = function (arg1, arg2) {
             if (arg1 instanceof Mat) {
                 for (var index = 0; index < this.width * this.height; index++)
@@ -258,7 +235,6 @@ var Cv;
                     arg1(this.at(index));
             }
         };
-        // Dummy for overloading
         Mat.prototype.forPixelsWithPoint = function (arg1, arg2) {
             if (arg1 instanceof Mat) {
                 for (var index = 0; index < this.width * this.height; index++)
@@ -269,7 +245,6 @@ var Cv;
                     arg1(this.index2Point(index), this.at(index));
             }
         };
-        // Dummy for overloading
         Mat.prototype.forInnerPixels = function (handler) {
             for (var index = this.width; index < this.width * this.height - this.width; index++)
                 if (0 < index % this.width && index % this.width < this.width - 1)
@@ -308,20 +283,17 @@ var Cv;
                 return output;
             }
         };
-        // Convert input to output as a grayscale
         Processor.convertToGray = function (input, output) {
             input.forPixels(output, function (value) {
                 var newValue = value.r * 0.2126 + value.g * 0.7152 + value.b * 0.0722;
                 return new Rgb([newValue, newValue, newValue]);
             });
         };
-        // Extract edges from input to output
         Processor.extractEdge = function (input, output) {
             input.forPixelsWithPoint(output, function (point, value) {
                 return new Rgb([127, 127, 127]).sub(input.at(point.clone().add(Point.UpLeft))).sub(input.at(point.clone().add(Point.Up))).sub(input.at(point.clone().add(Point.UpRight))).sub(input.at(point.clone().add(Point.Left))).sub(value.clone().multiply(8)).sub(input.at(point.clone().add(Point.Right))).sub(input.at(point.clone().add(Point.DownLeft))).sub(input.at(point.clone().add(Point.Down))).sub(input.at(point.clone().add(Point.DownRight)));
             });
         };
-        // Thinning
         Processor.thinning = function (input, output, directionMap) {
             var w = input.width;
             var h = input.height;
@@ -338,9 +310,6 @@ var Cv;
                 output.forInnerPixels(function (index) {
                     if (!rAry[index])
                         return;
-                    // [p[7] p[0] p[1]]
-                    // [p[6] p[@] p[2]]
-                    // [p[5] p[4] p[3]]
                     var p = [];
                     p[0] = rAry[index - w];
                     p[1] = rAry[index - w + 1];
@@ -376,7 +345,6 @@ var Cv;
                 }
             }
         };
-        // Restore labels by a thinning direction map
         Processor.restore = function (source, directionMap) {
             var _this = this;
             var nonvalid = [];
@@ -416,7 +384,6 @@ var Cv;
                 default: return Point.None;
             }
         };
-        // Vectorize input
         Processor.vectorize = function (mat, segments) {
             var directions = [Point.Right, Point.DownRight, Point.Down, Point.DownLeft];
             var remaining = mat.clone();
@@ -447,4 +414,3 @@ var Cv;
     })();
     Cv.Processor = Processor;
 })(Cv || (Cv = {}));
-//# sourceMappingURL=cv.js.map

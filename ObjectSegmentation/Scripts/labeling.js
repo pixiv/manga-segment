@@ -1,4 +1,3 @@
-/// <reference path="cv.ts" />
 "use strict";
 var Labeler;
 (function (Labeler) {
@@ -12,14 +11,13 @@ var Labeler;
         function Parameters() {
             this.expandingStep = 5;
             this.default_energy = 0.001;
-            this.ramda = 4; // The ratio between Data term and Smoothness term
-            this.feature_on = [true, true]; // Whether the feature is enabled
-            this.sigma_smooth = [10, 0.1]; // Sigma for smoothing term
-            this.sigma_data = [90, 0.3]; // Sigma for data term
+            this.ramda = 4;
+            this.feature_on = [true, true];
+            this.sigma_smooth = [10, 0.1];
+            this.sigma_data = [90, 0.3];
         }
         return Parameters;
     })();
-    // First step labeling using the nearest scribble
     var FirstStep = (function () {
         function FirstStep(seeds, target) {
             this.seeds = seeds;
@@ -61,7 +59,6 @@ var Labeler;
         return FirstStep;
     })();
     Labeler.FirstStep = FirstStep;
-    // Second step labeling harmonizing labels
     var SecondStep = (function () {
         function SecondStep(seeds, target) {
             this.seeds = seeds;
@@ -125,7 +122,6 @@ var Labeler;
                     this.target[k].setLabel(label);
             }
         };
-        // Calculate the feature value
         SecondStep.prototype.value = function (feature, s1, s2) {
             switch (feature) {
                 case 0 /* Proximity */:
@@ -134,7 +130,6 @@ var Labeler;
                     return 1 - Math.abs(s1.direction().innerProduct(s2.direction()));
             }
         };
-        // Fall off funciton
         SecondStep.prototype.fall_off = function (x, type, is_data_term) {
             if (is_data_term)
                 if (type == 0 /* Proximity */)
@@ -172,7 +167,6 @@ var Labeler;
             });
             return Math.round(this.parameters.ramda * max_affinity / this.parameters.default_energy);
         };
-        // Return a joined segments except the segment with the index
         SecondStep.prototype.join = function (source, excludedIndex) {
             var connected = [];
             for (var index = 0; index < source.length; index++)
@@ -209,7 +203,6 @@ var Optimizer;
             this.findPositiveNodes(s, result);
             return result;
         };
-        // Finds nodes in the side of source
         EdmondsKarp.prototype.findPositiveNodes = function (source, result) {
             result.push(source);
             for (var index in this.capacity[source])
@@ -260,4 +253,3 @@ var Optimizer;
     })();
     Optimizer.EdmondsKarp = EdmondsKarp;
 })(Optimizer || (Optimizer = {}));
-//# sourceMappingURL=labeling.js.map

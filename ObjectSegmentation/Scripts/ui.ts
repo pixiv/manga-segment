@@ -88,10 +88,13 @@ $(window).on("load",() => {
         },
         "mousemove": (e: JQueryEventObject) => {
             // Draw a line
-            if (scribbler.drawing())
+            if (scribbler.drawing() && !scribbler.blocking)
                 visualizer.draw(scribbler.move(Gui.Converter.jevent2point(e, $(e.target).offset())));
         },
-        "mousedown": (e: JQueryEventObject) => scribbler.start(Gui.Converter.jevent2point(e, $(e.target).offset())),
+        "mousedown": (e: JQueryEventObject) => {
+            if (!scribbler.blocking)
+                scribbler.start(Gui.Converter.jevent2point(e, $(e.target).offset()))
+        },
         "mouseup mouseleave": () => {
             if (scribbler.drawing()) {
                 // Stop drawing

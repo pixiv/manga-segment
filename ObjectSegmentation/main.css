@@ -25,3 +25,7 @@ div#object_segmentation div span.selected {
 div#object_segmentation form#layers {
     clear: both;
 }
+
+div#object_segmentation form#layers input {
+    margin: 10px;
+}
