@@ -23,8 +23,8 @@ JQuery 2.1.1+，TypeScript 1.4+ (Visual Studio 2013+)
 その画像の上に，分けたい部分毎に色の異なる線を描くと，画像内のオブジェクトが分割された状態で表示されます．
 さらに線を加えていくと，その度に結果が更新されます．
 
-### Javascript を HTMLに組み込む
-JQuery と共に以下のコンパイル済みの Javascript を読み込み，
+### JavaScript を HTMLに組み込む
+JQuery と共に以下のコンパイル済みの JavaScript を読み込み，
 
     <script src="Scripts/cv.js"></script>
     <script src="Scripts/labeling.js"></script>
@@ -34,7 +34,7 @@ JQuery と共に以下のコンパイル済みの Javascript を読み込み，
 
     <div id="object_segmentation"></div>
 
-### Typescript を編集してコンパイルする
+### TypeScript を編集してコンパイルする
 TypeScript は，Visual Studio で ObjectSegmentation.sln を開けば，編集・コンパイルできます．
 
 
