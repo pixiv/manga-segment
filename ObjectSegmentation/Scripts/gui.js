@@ -87,17 +87,11 @@ var Gui;
         return Scribbler;
     })();
     Gui.Scribbler = Scribbler;
-    var Layer = (function () {
-        function Layer() {
-        }
-        return Layer;
-    })();
     var Visualizer = (function () {
         function Visualizer() {
-            this.mat_layer = new Layer();
-            this.scribbles_layer = new Layer();
-            this.stroke_layer = new Layer();
-            this.direction_map_layer = new Layer();
+            this.scribbles = [];
+            this.stroke = [];
+            this.direction_map = new Mat();
         }
         Visualizer.prototype.setCanvas = function (element) {
             this.canvas = element;
@@ -105,38 +99,35 @@ var Gui;
             this.context.translate(0.5, 0.5);
         };
         Visualizer.prototype.setObjects = function (mat, scribbles, stroke, directionMap) {
-            this.mat_layer.object = mat;
-            this.scribbles_layer.object = scribbles;
-            this.stroke_layer.object = stroke;
-            this.direction_map_layer.object = directionMap;
-        };
-        Visualizer.prototype.setVisibility = function () {
-            this.mat_layer.visible = $("#visible_source").prop("checked");
-            this.scribbles_layer.visible = $("#visible_scribbles").prop("checked");
-            this.stroke_layer.visible = $("#visible_stroke").prop("checked");
-            this.direction_map_layer.visible = $("#visible_direction_map").prop("checked");
+            this.mat = mat;
+            this.scribbles = scribbles;
+            this.stroke = stroke;
+            this.direction_map = directionMap;
         };
         Visualizer.prototype.update = function () {
-            this.draw(new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white));
-            if (this.direction_map_layer.visible) {
-                var mat = new Mat();
-                this.direction_map_layer.object.forPixelsWithPoint(mat, function (point, rgb) { return Rgb.fromString(Rgb.standards[rgb.r]); });
+            this.draw(new Mat(this.mat.width, this.mat.height, Rgb.white));
+            if ($("#visible_direction_map").prop("checked")) {
+                var mat = new Mat(this.direction_map.width, this.direction_map.height, Rgb.white);
+                this.direction_map.forPixelsWithPoint(mat, function (point, rgb) { return Rgb.fromString(Rgb.standards[rgb.r]); });
+                this.draw(mat);
             }
             else {
-                if (this.mat_layer.visible)
-                    this.draw(this.mat_layer.object);
-                if (this.scribbles_layer.visible)
-                    this.draw(this.scribbles_layer.object);
-                if (this.stroke_layer.visible)
-                    this.draw(this.stroke_layer.object);
+                if ($("#visible_result").prop("checked"))
+                    this.restore();
+                else if ($("#visible_source").prop("checked"))
+                    this.draw(this.mat);
+                else if ($("#visible_stroke").prop("checked"))
+                    this.draw(this.stroke);
+                if ($("#visible_scribbles").prop("checked"))
+                    this.draw(this.scribbles);
             }
         };
         Visualizer.prototype.restore = function () {
             var _this = this;
-            var mat = new Mat(this.mat_layer.object.width, this.mat_layer.object.height, Rgb.white);
-            this.stroke_layer.object.forEach(function (segment) { return mat.draw(segment, Rgb.fromString(_this.colors[segment.label()])); });
+            var mat = new Mat(this.mat.width, this.mat.height, Rgb.white);
+            this.stroke.forEach(function (segment) { return mat.draw(segment, Rgb.fromString((segment.label() < 0) ? 'black' : _this.colors[segment.label()])); });
             var imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
-            Cv.Processor.restore(mat, this.direction_map_layer.object);
+            Cv.Processor.restore(mat, this.direction_map);
             mat.copyTo(imageData);
             this.context.putImageData(imageData, 0, 0);
         };
@@ -160,7 +151,7 @@ var Gui;
                 var segment = arg;
                 if (segment) {
                     this.context.strokeStyle = (segment.label() < 0) ? 'black' : this.colors[segment.label()];
-                    this.context.lineWidth = 1;
+                    this.context.lineWidth = 3;
                     this.context.beginPath();
                     this.context.moveTo(segment.start.x, segment.start.y);
                     this.context.lineTo(segment.end.x, segment.end.y);
@@ -174,7 +165,7 @@ var Gui;
         };
         Visualizer.prototype.getLabels = function () {
             var labels = [];
-            this.stroke_layer.object.forEach(function (segment) { return labels.push(segment.label()); });
+            this.stroke.forEach(function (segment) { return labels.push(segment.label()); });
             return labels;
         };
         return Visualizer;

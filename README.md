@@ -16,15 +16,16 @@ Y. Aramaki, et al. "Interactive segmentation for manga." ACM SIGGRAPH 2014 Poste
 http://inside.pixiv.net/
 
 ## 要件
-TypeScript 1.4 (Visual Studio 2013)
+TypeScript 1.4+ (Visual Studio 2013+)
 
-Javascript は，Chrome 40 / Firefox 35 / Internet Explorer 11 で実行可能です．
+Javascript は，Chrome 40+ / Firefox 35+ / Internet Explorer 11+ で実行可能です．
 
 ## 使い方
-TypeScript は，Visual Studio 2013 で ObjectSegmentation.sln を開いてビルドすることで Javascript に変換されます．
+TypeScript は，Visual Studio で ObjectSegmentation.sln を開いてビルドすることで Javascript に変換されます．
 
 ブラウザで index.html を開くことで，画像が読み込まれます．
 その画像の上に，分けたい部分毎に色の異なる線を描くと，画像内のオブジェクトが分割された状態で表示されます．
+さらに線を加えていくと，その度に結果が更新されます．
 
 ## ライセンス
 

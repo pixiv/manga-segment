@@ -38,6 +38,9 @@ var Cv;
         };
         Rgb.fromString = function (name) {
             switch (name) {
+                case 'black':
+                    return Rgb.black;
+                    break;
                 case 'red':
                     return Rgb.red;
                     break;

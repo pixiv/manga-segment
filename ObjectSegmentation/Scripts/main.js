@@ -1,11 +1,11 @@
-/// <reference path="scripts/typings/jquery/jquery.d.ts" />
+/// <reference path="typings/jquery/jquery.d.ts" />
 /// <reference path="gui.ts" />
 /// <reference path="labeler.ts" />
 "use strict";
 $(window).on("load", function () {
     var source;
-    var scribbles = new Array();
-    var stroke = new Array();
+    var scribbles = [];
+    var stroke = [];
     var stroke_file;
     var input_file;
     var colors = [];
@@ -29,7 +29,6 @@ $(window).on("load", function () {
         Cv.Processor.thinning(thinned, thinned, directionMap);
         Cv.Processor.vectorize(thinned, stroke);
         visualizer.setObjects(source, scribbles, stroke, directionMap);
-        visualizer.setVisibility();
         visualizer.colors = colors;
         visualizer.update();
     });
@@ -56,31 +55,17 @@ $(window).on("load", function () {
                     calculating = true;
                     for (var i in stroke)
                         stroke[i].setLabel(Cv.None);
-                    var nearestScribble = new Labeler.NearestScribbles(scribbles, stroke);
-                    nearestScribble.expandNearest(1000);
-                    var smartScribble = new Labeler.SmartScribbles(scribbles, nearestScribble.target);
-                    smartScribble.run();
+                    var firstStep = new Labeler.FirstStep(scribbles, stroke);
+                    firstStep.expandAreaUntil(700);
+                    var secondStep = new Labeler.SecondStep(scribbles, firstStep.target);
+                    secondStep.setLabels();
                     visualizer.update();
-                    visualizer.restore();
                     calculating = false;
                 }
             }
         }
     });
-    $("input#visible_source").on("click", function () {
-        visualizer.setVisibility();
-        visualizer.update();
-    });
-    $("input#visible_scribbles").on("click", function () {
-        visualizer.setVisibility();
-        visualizer.update();
-    });
-    $("input#visible_stroke").on("click", function () {
-        visualizer.setVisibility();
-        visualizer.update();
-    });
-    $("input#visible_direction_map").on("click", function () {
-        visualizer.setVisibility();
+    $("form#layers input").on("click", function () {
         visualizer.update();
     });
 });

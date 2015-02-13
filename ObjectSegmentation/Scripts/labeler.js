@@ -11,25 +11,27 @@ var Labeler;
     var Features = [0 /* Proximity */, 1 /* Direction */];
     var Parameters = (function () {
         function Parameters() {
-            this.default_energy = 0.0001;
-            this.ramda = 4; // The ratio between Data term and Smoothing term
+            this.expandingStep = 5;
+            this.default_energy = 0.001;
+            this.ramda = 4; // The ratio between Data term and Smoothness term
             this.feature_on = [true, true]; // Whether the feature is enabled
             this.sigma_smooth = [10, 0.1]; // Sigma for smoothing term
             this.sigma_data = [90, 0.3]; // Sigma for data term
         }
         return Parameters;
     })();
-    var NearestScribbles = (function () {
-        function NearestScribbles(seeds, target) {
+    var FirstStep = (function () {
+        function FirstStep(seeds, target) {
             this.seeds = seeds;
+            this.parameters = new Parameters;
             this.target = [];
             for (var i = 0; i < target.length; i++) {
                 this.target.push(target[i]);
             }
         }
-        NearestScribbles.prototype.expandNearest = function (maxSegmentsNum) {
-            this.setNearests();
-            for (var offset = 5; maxSegmentsNum < this.target.length; offset += 5)
+        FirstStep.prototype.expandAreaUntil = function (maxSegmentsNum) {
+            this.setLabels();
+            for (var offset = this.parameters.expandingStep; maxSegmentsNum < this.target.length; offset += this.parameters.expandingStep)
                 for (var i = 0; i < this.target.length; i++) {
                     if (this.target[i].center().norm(this.nearests[i].center()) < offset) {
                         this.target[i].setLabel(this.nearests[i].label());
@@ -38,7 +40,7 @@ var Labeler;
                     }
                 }
         };
-        NearestScribbles.prototype.setNearests = function () {
+        FirstStep.prototype.setLabels = function () {
             this.nearests = [];
             for (var i = 0; i < this.target.length; i++) {
                 var targetSegment = this.target[i];
@@ -56,11 +58,11 @@ var Labeler;
                 this.nearests[i] = nearestSeed;
             }
         };
-        return NearestScribbles;
+        return FirstStep;
     })();
-    Labeler.NearestScribbles = NearestScribbles;
-    var SmartScribbles = (function () {
-        function SmartScribbles(seeds, target) {
+    Labeler.FirstStep = FirstStep;
+    var SecondStep = (function () {
+        function SecondStep(seeds, target) {
             this.seeds = seeds;
             this.target = target;
             this.parameters = new Parameters;
@@ -68,7 +70,7 @@ var Labeler;
             this.edges = [];
             this.capacity = [];
         }
-        SmartScribbles.prototype.run = function () {
+        SecondStep.prototype.setLabels = function () {
             var _this = this;
             this.parameters.max_prox = this.parameters.sigma_smooth[0 /* Proximity */] * Math.sqrt(Math.log(this.parameters.default_energy * this.parameters.sigma_smooth[0 /* Proximity */]));
             this.NODENUM = this.target.length + 2;
@@ -122,7 +124,7 @@ var Labeler;
             }
         };
         // Calculate the feature value
-        SmartScribbles.prototype.value = function (feature, s1, s2) {
+        SecondStep.prototype.value = function (feature, s1, s2) {
             switch (feature) {
                 case 0 /* Proximity */:
                     return s1.center().norm(s2.center());
@@ -131,7 +133,7 @@ var Labeler;
             }
         };
         // Fall off funciton
-        SmartScribbles.prototype.fall_off = function (x, type, is_data_term) {
+        SecondStep.prototype.fall_off = function (x, type, is_data_term) {
             if (is_data_term)
                 if (type == 0 /* Proximity */)
                     return Math.exp(-x * x / Math.pow(this.parameters.sigma_data[type], 2.0)) / this.parameters.sigma_data[type];
@@ -140,7 +142,7 @@ var Labeler;
             else
                 return Math.exp(-x * x / Math.pow(this.parameters.sigma_smooth[type], 2.0));
         };
-        SmartScribbles.prototype.smoothness_term = function (s1, s2) {
+        SecondStep.prototype.smoothness_term = function (s1, s2) {
             var _this = this;
             if (Math.pow(this.parameters.max_prox, 2) < s1.center().norm(s2.center()))
                 return 0;
@@ -155,7 +157,7 @@ var Labeler;
                 return Math.round(value / this.parameters.default_energy);
             }
         };
-        SmartScribbles.prototype.data_term = function (s1, segments) {
+        SecondStep.prototype.data_term = function (s1, segments) {
             var _this = this;
             var max_affinity = this.parameters.default_energy, affinity;
             segments.forEach(function (segment) {
@@ -169,15 +171,15 @@ var Labeler;
             return Math.round(this.parameters.ramda * max_affinity / this.parameters.default_energy);
         };
         // Return a joined segments except the segment with the index
-        SmartScribbles.prototype.join = function (source, excludedIndex) {
+        SecondStep.prototype.join = function (source, excludedIndex) {
             var connected = [];
             for (var index = 0; index < source.length; index++)
                 if (index != excludedIndex)
                     Array.prototype.push.apply(connected, this.seeds[index]);
             return connected;
         };
-        return SmartScribbles;
+        return SecondStep;
     })();
-    Labeler.SmartScribbles = SmartScribbles;
+    Labeler.SecondStep = SecondStep;
 })(Labeler || (Labeler = {}));
 //# sourceMappingURL=labeler.js.map

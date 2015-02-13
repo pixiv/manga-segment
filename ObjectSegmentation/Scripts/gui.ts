@@ -126,9 +126,9 @@ module Gui {
         update(): void {
             this.draw(new Mat(this.mat.width, this.mat.height, Rgb.white));
             if ($("#visible_direction_map").prop("checked")) {
-                var mat: Mat<Rgb> = new Mat<Rgb>();
+                var mat: Mat<Rgb> = new Mat<Rgb>(this.direction_map.width, this.direction_map.height, Rgb.white);
                 this.direction_map.forPixelsWithPoint(mat,(point, rgb) => Rgb.fromString(Rgb.standards[rgb.r]));
-                this.draw(this.direction_map);
+                this.draw(mat);
             } else {
                 if ($("#visible_result").prop("checked"))
                     this.restore();
@@ -172,7 +172,7 @@ module Gui {
                 var segment: Segment = arg;
                 if (segment) {
                     this.context.strokeStyle = (segment.label() < 0) ? 'black' : this.colors[segment.label()];
-                    this.context.lineWidth = 1;
+                    this.context.lineWidth = 3;
                     this.context.beginPath();
                     this.context.moveTo(segment.start.x, segment.start.y);
                     this.context.lineTo(segment.end.x, segment.end.y);
