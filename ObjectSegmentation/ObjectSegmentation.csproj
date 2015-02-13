@@ -23,8 +23,8 @@
     <Content Include="images\test_bin.png" />
     <Content Include="images\x.bmp" />
     <Content Include="images\x.png" />
-    <Content Include="index.css" />
     <Content Include="index.html" />
+    <Content Include="main.css" />
     <Content Include="packages.config" />
     <None Include="Scripts\jquery-2.1.1.intellisense.js" />
     <Content Include="Scripts\jquery-2.1.1.js" />
@@ -34,10 +34,8 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="Scripts\cv.ts" />
-    <TypeScriptCompile Include="Scripts\gui.ts" />
-    <TypeScriptCompile Include="Scripts\labeler.ts" />
-    <TypeScriptCompile Include="Scripts\main.ts" />
-    <TypeScriptCompile Include="Scripts\optimizer.ts" />
+    <TypeScriptCompile Include="Scripts\labeling.ts" />
+    <TypeScriptCompile Include="Scripts\ui.ts" />
     <TypeScriptCompile Include="Scripts\typings\jquery\jquery.d.ts" />
   </ItemGroup>
   <ItemGroup>

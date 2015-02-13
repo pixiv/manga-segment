@@ -1,4 +1,4 @@
-/// <reference path="optimizer.ts" />
+/// <reference path="cv.ts" />
 "use strict";
 var Labeler;
 (function (Labeler) {
@@ -8,7 +8,6 @@ var Labeler;
         Feature[Feature["Direction"] = 1] = "Direction";
     })(Feature || (Feature = {}));
     ;
-    var Features = [0 /* Proximity */, 1 /* Direction */];
     var Parameters = (function () {
         function Parameters() {
             this.expandingStep = 5;
@@ -20,6 +19,7 @@ var Labeler;
         }
         return Parameters;
     })();
+    // First step labeling using the nearest scribble
     var FirstStep = (function () {
         function FirstStep(seeds, target) {
             this.seeds = seeds;
@@ -61,10 +61,12 @@ var Labeler;
         return FirstStep;
     })();
     Labeler.FirstStep = FirstStep;
+    // Second step labeling harmonizing labels
     var SecondStep = (function () {
         function SecondStep(seeds, target) {
             this.seeds = seeds;
             this.target = target;
+            this.features = [0 /* Proximity */, 1 /* Direction */];
             this.parameters = new Parameters;
             this.firstTIme = true;
             this.edges = [];
@@ -148,7 +150,7 @@ var Labeler;
                 return 0;
             else {
                 var value = 1;
-                Features.forEach(function (feature) {
+                this.features.forEach(function (feature) {
                     if (_this.parameters.feature_on[feature])
                         value *= _this.fall_off(_this.value(feature, s1, s2), feature, false);
                 });
@@ -162,7 +164,7 @@ var Labeler;
             var max_affinity = this.parameters.default_energy, affinity;
             segments.forEach(function (segment) {
                 affinity = 1;
-                Features.forEach(function (feature) {
+                _this.features.forEach(function (feature) {
                     if (_this.parameters.feature_on[feature])
                         affinity *= _this.fall_off(_this.value(feature, s1, segment), feature, true);
                 });
@@ -182,4 +184,80 @@ var Labeler;
     })();
     Labeler.SecondStep = SecondStep;
 })(Labeler || (Labeler = {}));
-//# sourceMappingURL=labeler.js.map
+var Optimizer;
+(function (Optimizer) {
+    var EdmondsKarp = (function () {
+        function EdmondsKarp(edges, capacity) {
+            this.edges = edges;
+            this.capacity = capacity;
+            this.flow = [];
+            this.node_count = this.capacity.length;
+            for (var j = 0; j < this.node_count; j++) {
+                var row = [];
+                for (var k = 0; k < this.node_count; k++)
+                    row.push(0);
+                this.flow.push(row);
+            }
+        }
+        EdmondsKarp.prototype.maxflow = function (s, t) {
+            this.calculateFlow(s, t);
+            return this.flow[s].reduce(function (v, w) { return v + w; });
+        };
+        EdmondsKarp.prototype.minCut = function (s, t) {
+            this.calculateFlow(s, t);
+            var result = [];
+            this.findPositiveNodes(s, result);
+            return result;
+        };
+        // Finds nodes in the side of source
+        EdmondsKarp.prototype.findPositiveNodes = function (source, result) {
+            result.push(source);
+            for (var index in this.capacity[source])
+                if (this.flow[source][index] < this.capacity[source][index] && result.indexOf(index) < 0)
+                    Array.prototype.push.apply(result, this.findPositiveNodes(index, result));
+        };
+        EdmondsKarp.prototype.calculateFlow = function (s, t) {
+            while (true) {
+                var parent = [];
+                for (var k = 0; k < this.node_count; k++)
+                    parent.push(-1);
+                parent[s] = s;
+                var M = [];
+                for (var k = 0; k < this.node_count; k++)
+                    M.push(0);
+                M[s] = Infinity;
+                var queue = [s];
+                var _break = false;
+                while (0 < queue.length && !_break) {
+                    var u = queue.pop();
+                    for (var i in this.edges[u]) {
+                        var v = this.edges[u][i];
+                        if (this.capacity[u][v] - this.flow[u][v] > 0 && parent[v] == -1) {
+                            parent[v] = u;
+                            M[v] = Math.min(M[u], this.capacity[u][v] - this.flow[u][v]);
+                            if (v != t) {
+                                queue.push(v);
+                            }
+                            else {
+                                while (parent[v] != v) {
+                                    u = parent[v];
+                                    this.flow[u][v] += M[t];
+                                    this.flow[v][u] -= M[t];
+                                    v = u;
+                                }
+                                _break = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (parent[t] == -1) {
+                    return;
+                }
+            }
+        };
+        return EdmondsKarp;
+    })();
+    Optimizer.EdmondsKarp = EdmondsKarp;
+})(Optimizer || (Optimizer = {}));
+//# sourceMappingURL=labeling.js.map

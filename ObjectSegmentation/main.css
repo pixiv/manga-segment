@@ -22,12 +22,6 @@ div#object_segmentation div span.selected {
     border: 2px solid black;
 }
 
-form#layers {
+div#object_segmentation form#layers {
     clear: both;
-}
-
-form#layers fieldset.displaying button {
-    background-color: skyblue;
-    border: 1px solid gray;
-    height: 30px;
 }

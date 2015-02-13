@@ -23,7 +23,7 @@ module Cv {
         public static fuchsia = new Rgb([255, 0, 255]);
         public static green = new Rgb([0, 128, 0]);
         public static navy = new Rgb([0, 0, 128]);
-        public static standards = ['red', 'blue', 'lime', 'yellow', 'aqua', 'fuchsia', 'green', 'navy'];
+        public static standards = ['red', 'blue', 'fuchsia', 'green', 'navy'];
 
         public r: number;
         public b: number;
@@ -138,6 +138,7 @@ module Cv {
             return Math.sqrt(Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2));
         }
 
+        // Normalize to 1-length Point
         normalize(): Point {
             return (this.norm() == 0) ? this : this.multiply(1 / this.norm());
         }
@@ -203,11 +204,17 @@ module Cv {
         constructor(width: number, height: number, value: T);
         // Cast from ImageData
         constructor(imageData: ImageData);
+        constructor(mat: Mat<T>, value: T);
         // Dummy for overloading
         constructor(arg1?: any, arg2?: number, arg3?: any) {
             if (!arg1) {
                 this.width = 0;
                 this.height = 0;
+            } else if (arg1 instanceof Mat) {
+                this.width = arg1.width;
+                this.height = arg1.height;
+                this.data = new Uint8Array(this.width * this.height * 4);
+                this.forPixels(this,() => arg3);
             } else if (arg1 instanceof ImageData) {
                 this.width = arg1.width;
                 this.height = arg1.height;
@@ -224,6 +231,7 @@ module Cv {
             }
         }
 
+        // Create a new Mat and copy the data
         clone(): Mat<T> {
             var newData: number[] = [];
             for (var i = 0; i < this.data.length; i++)
@@ -321,13 +329,31 @@ module Cv {
     export class Processor {
 
         // Invert input to output
-        static invert(input: Mat<Rgb>, output: Mat<Rgb>) {
-            input.forPixels(output,(value: Rgb) => new Rgb([255 - value.r, 255 - value.g, 255 - value.b]));
+        static invert(input: Mat<Rgb>): Mat<Rgb>;
+        static invert(input: Mat<Rgb>, output: Mat<Rgb>): void;
+        static invert(input: Mat<Rgb>, output?: Mat<Rgb>): any {
+            if (output)
+                input.forPixels(output,(value: Rgb) => new Rgb([255 - value.r, 255 - value.g, 255 - value.b]));
+            else {
+                var output = input.clone();
+                input.forPixels(output,(value: Rgb) => new Rgb([255 - value.r, 255 - value.g, 255 - value.b]));
+                return output;
+            }
         }
 
         // Binarize input to output using threshold value
-        static binarize(input: Mat<Rgb>, output: Mat<Rgb>, threshold: number): void {
-            input.forPixels(output,(value: Rgb) => (value.r < threshold && value.g < threshold && value.b < threshold) ? Rgb.black : Rgb.white);
+        static binarize(input: Mat<Rgb>, threshold: number): Mat<Rgb>;
+        static binarize(input: Mat<Rgb>, output: Mat<Rgb>, threshold: number): void;
+        static binarize(input: Mat<Rgb>, arg2: any, arg3?: number): any {
+            if (arg3) {
+                var threshold = arg3;
+                input.forPixels(arg2,(value: Rgb) => (value.r < threshold && value.g < threshold && value.b < threshold) ? Rgb.black : Rgb.white);
+            } else {
+                var threshold = <number>arg2;
+                var output = input.clone();
+                input.forPixels(output,(value: Rgb) => (value.r < threshold && value.g < threshold && value.b < threshold) ? Rgb.black : Rgb.white);
+                return output;
+            }
         }
 
         // Convert input to output as a grayscale
@@ -354,14 +380,14 @@ module Cv {
             });
         }
 
-        // Thinning by Zhang-Suen
+        // Thinning
         static thinning(input: Mat<Rgb>, output: Mat<Rgb>, directionMap: Mat<Rgb>) {
             var w = input.width;
             var h = input.height;
-            var outputData = output.data;
-            var directionData = directionMap.data;
             input.forPixels(output, value => value);
             input.forPixels(directionMap, value => Rgb.white);
+            var outputData = output.data;
+            var directionData = directionMap.data;
             var rAry: boolean[] = [];
             var bFlag = true;
 

@@ -7,29 +7,13 @@
     <link rel="stylesheet" href="main.css" />
     <script src="Scripts/jquery-2.1.1.js"></script>
     <script src="Scripts/cv.js"></script>
-    <script src="Scripts/optimizer.js"></script>
-    <script src="Scripts/labeler.js"></script>
-    <script src="Scripts/gui.js"></script>
-    <script src="Scripts/main.js"></script>
+    <script src="Scripts/labeling.js"></script>
+    <script src="Scripts/ui.js"></script>
 </head>
 
 <body>
 
-<div id="object_segmentation">
-    <canvas></canvas>
-    <div></div>
-</div>
-
-<form id ="layers" method="post" action="javascript:void(0);">
-    <fieldset class="displaying">
-        <legend>Layers</legend>
-        <input type="checkbox" id="visible_scribbles" checked="checked" /><label for="visible_scribbles">ユーザ入力</label>
-        <input type="checkbox" id="visible_result" checked="checked" /><label for="visible_result">結果</label>
-        <input type="checkbox" id="visible_source" /><label for="visible_source">元画像</label>
-        <input type="checkbox" id="visible_stroke" /><label for="visible_stroke">線画像</label>
-        <input type="checkbox" id="visible_direction_map" /><label for="visible_direction_map">方向マップ</label>
-    </fieldset>
-</form>
+<div id="object_segmentation"></div>
 
 </body>
 

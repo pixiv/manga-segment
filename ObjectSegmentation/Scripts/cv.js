@@ -77,7 +77,7 @@ var Cv;
         Rgb.fuchsia = new Rgb([255, 0, 255]);
         Rgb.green = new Rgb([0, 128, 0]);
         Rgb.navy = new Rgb([0, 0, 128]);
-        Rgb.standards = ['red', 'blue', 'lime', 'yellow', 'aqua', 'fuchsia', 'green', 'navy'];
+        Rgb.standards = ['red', 'blue', 'fuchsia', 'green', 'navy'];
         return Rgb;
     })();
     Cv.Rgb = Rgb;
@@ -119,6 +119,7 @@ var Cv;
             if (point === void 0) { point = Point.Origin; }
             return Math.sqrt(Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2));
         };
+        // Normalize to 1-length Point
         Point.prototype.normalize = function () {
             return (this.norm() == 0) ? this : this.multiply(1 / this.norm());
         };
@@ -178,6 +179,12 @@ var Cv;
                 this.width = 0;
                 this.height = 0;
             }
+            else if (arg1 instanceof Mat) {
+                this.width = arg1.width;
+                this.height = arg1.height;
+                this.data = new Uint8Array(this.width * this.height * 4);
+                this.forPixels(this, function () { return arg3; });
+            }
             else if (arg1 instanceof ImageData) {
                 this.width = arg1.width;
                 this.height = arg1.height;
@@ -201,6 +208,7 @@ var Cv;
         Mat.prototype.index2Point = function (index) {
             return new Point(index % this.width, (index - index % this.width) / this.width);
         };
+        // Create a new Mat and copy the data
         Mat.prototype.clone = function () {
             var newData = [];
             for (var i = 0; i < this.data.length; i++)
@@ -279,13 +287,26 @@ var Cv;
     var Processor = (function () {
         function Processor() {
         }
-        // Invert input to output
         Processor.invert = function (input, output) {
-            input.forPixels(output, function (value) { return new Rgb([255 - value.r, 255 - value.g, 255 - value.b]); });
+            if (output)
+                input.forPixels(output, function (value) { return new Rgb([255 - value.r, 255 - value.g, 255 - value.b]); });
+            else {
+                var output = input.clone();
+                input.forPixels(output, function (value) { return new Rgb([255 - value.r, 255 - value.g, 255 - value.b]); });
+                return output;
+            }
         };
-        // Binarize input to output using threshold value
-        Processor.binarize = function (input, output, threshold) {
-            input.forPixels(output, function (value) { return (value.r < threshold && value.g < threshold && value.b < threshold) ? Rgb.black : Rgb.white; });
+        Processor.binarize = function (input, arg2, arg3) {
+            if (arg3) {
+                var threshold = arg3;
+                input.forPixels(arg2, function (value) { return (value.r < threshold && value.g < threshold && value.b < threshold) ? Rgb.black : Rgb.white; });
+            }
+            else {
+                var threshold = arg2;
+                var output = input.clone();
+                input.forPixels(output, function (value) { return (value.r < threshold && value.g < threshold && value.b < threshold) ? Rgb.black : Rgb.white; });
+                return output;
+            }
         };
         // Convert input to output as a grayscale
         Processor.convertToGray = function (input, output) {
@@ -300,14 +321,14 @@ var Cv;
                 return new Rgb([127, 127, 127]).sub(input.at(point.clone().add(Point.UpLeft))).sub(input.at(point.clone().add(Point.Up))).sub(input.at(point.clone().add(Point.UpRight))).sub(input.at(point.clone().add(Point.Left))).sub(value.clone().multiply(8)).sub(input.at(point.clone().add(Point.Right))).sub(input.at(point.clone().add(Point.DownLeft))).sub(input.at(point.clone().add(Point.Down))).sub(input.at(point.clone().add(Point.DownRight)));
             });
         };
-        // Thinning by Zhang-Suen
+        // Thinning
         Processor.thinning = function (input, output, directionMap) {
             var w = input.width;
             var h = input.height;
-            var outputData = output.data;
-            var directionData = directionMap.data;
             input.forPixels(output, function (value) { return value; });
             input.forPixels(directionMap, function (value) { return Rgb.white; });
+            var outputData = output.data;
+            var directionData = directionMap.data;
             var rAry = [];
             var bFlag = true;
             for (var k = 0; bFlag; k++) {
